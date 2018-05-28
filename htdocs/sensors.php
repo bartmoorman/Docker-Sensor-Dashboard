@@ -1,7 +1,6 @@
 <?php
 require_once('inc/dashboard.class.php');
 $dashboard = new Dashboard(true, true, true, false);
-$currentPage = !empty($_REQUEST['page']) ? $_REQUEST['page'] : 1;
 ?>
 <!DOCTYPE html>
 <html lang='en'>
@@ -26,6 +25,10 @@ $currentPage = !empty($_REQUEST['page']) ? $_REQUEST['page'] : 1;
           <tr>
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
             <th>Name</th>
+            <th>Min Temp.</th>
+            <th>Max Temp.</th>
+            <th>Min Hum.</th>
+            <th>Max Hum.</th>
             <th>Token</th>
           </tr>
         </thead>
@@ -40,6 +43,10 @@ foreach ($dashboard->getSensors() as $sensor) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-edit' data-sensor_id='{$sensor['sensor_id']}'>Edit</button></td>" . PHP_EOL;
   }
   echo "            <td>{$sensor['name']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['min_temperature']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['max_temperature']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['min_humidity']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['max_humidity']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['token']}</td>" . PHP_EOL;
   echo "          </tr>" . PHP_EOL;
 }
@@ -64,7 +71,11 @@ foreach ($dashboard->getSensors() as $sensor) {
               <div class='form-row justify-content-center'>
                 <div class='col-auto'>
                   <input class='form-control' id='name' type='text' name='name' placeholder='Sensor Name' required>
-                  <input class='form-control id-token' id='token' type='text' name='token' placeholder='Access Token' minlength='10' required>
+                  <input class='form-control id-token' id='token' type='text' name='token' placeholder='Access Token' minlength='16' maxlength='16' pattern='[a-z0-9]{16}' required>
+                  <input class='form-control' id='min_temperature' type='tel' name='min_temperature' placeholder='Min Temperature (&deg;C)' minlength='1' maxlength='3' pattern='-?[0-9]{1,2}'>
+                  <input class='form-control' id='max_temperature' type='tel' name='max_temperature' placeholder='Max Temperature (&deg;C)' minlength='1' maxlength='3' pattern='-?[0-9]{1,2}'>
+                  <input class='form-control' id='min_humidity' type='tel' name='min_humidity' placeholder='Min Humidity (&percnt;)' minlength='1' maxlength='3' pattern='[0-9]{1,3}'>
+                  <input class='form-control' id='max_humidity' type='tel' name='max_humidity' placeholder='Max Humidity (&percnt;)' minlength='1' maxlength='3' pattern='[0-9]{1,3}'>
                 </div>
               </div>
             </div>
@@ -107,6 +118,10 @@ foreach ($dashboard->getSensors() as $sensor) {
                 $('form').data('sensor_id', sensor.sensor_id);
                 $('#name').val(sensor.name);
                 $('#token').val(sensor.token);
+                $('#min_temperature').val(sensor.min_temperature);
+                $('#max_temperature').val(sensor.max_temperature);
+                $('#min_humidity').val(sensor.min_humidity);
+                $('#max_humidity').val(sensor.max_humidity);
                 $('button.id-modify.id-volatile').data('sensor_id', sensor.sensor_id);
                 $('div.id-modal').modal('toggle');
               }
@@ -132,7 +147,7 @@ foreach ($dashboard->getSensors() as $sensor) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.getJSON('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "token": $('#token').val()})
+          $.getJSON('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "token": $('#token').val(), "min_temperature": $('#min_temperature').val(), "max_temperature": $('#max_temperature').val(), "min_humidity": $('#min_humidity').val(), "max_humidity": $('#max_humidity').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();

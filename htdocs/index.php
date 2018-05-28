@@ -15,7 +15,13 @@ $dashboard = new Dashboard(true, true, false, false);
   <body>
     <nav class='navbar'>
       <button class='btn btn-sm btn-outline-success id-nav' data-href='<?php echo dirname($_SERVER['PHP_SELF']) ?>'>Home</button>
-      <select class='btn btn-lg btn-outline-success ml-auto id-sensor-id'>
+      <button class='btn btn-sm btn-outline-info ml-auto mr-2 id-nav' data-href='sensors.php'>Sensors</button>
+      <button class='btn btn-sm btn-outline-info mr-2 id-nav' data-href='users.php'>Users</button>
+      <button class='btn btn-sm btn-outline-info id-nav' data-href='events.php'>Events</button>
+    </nav>
+    <canvas id='chart'></canvas>
+    <nav class='navbar text-center'>
+      <select class='btn btn-sm btn-outline-success ml-auto mr-auto id-sensor-id'>
         <option value='0'>Sensor</option>
 <?php
 foreach ($dashboard->getSensors() as $sensor) {
@@ -23,11 +29,7 @@ foreach ($dashboard->getSensors() as $sensor) {
 }
 ?>
       </select>
-      <button class='btn btn-sm btn-outline-info ml-auto mr-2 id-nav' data-href='sensors.php'>Sensors</button>
-      <button class='btn btn-sm btn-outline-info mr-2 id-nav' data-href='users.php'>Users</button>
-      <button class='btn btn-sm btn-outline-info id-nav' data-href='events.php'>Events</button>
     </nav>
-    <canvas id='chart'></canvas>
     <script src='//code.jquery.com/jquery-3.2.1.min.js' integrity='sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f' crossorigin='anonymous'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>
     <script src='//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>

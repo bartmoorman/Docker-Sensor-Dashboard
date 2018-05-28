@@ -2,6 +2,7 @@
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn = null;
+  public $pageLimit = 20;
 
   public function __construct($requireConfigured = true, $requireValidSession = true, $requireAdmin = true, $requireIndex = false) {
     session_start();
@@ -43,6 +44,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `first_name` TEXT NOT NULL,
   `last_name` TEXT,
   `email` TEXT,
+  `pushover_user` TEXT,
+  `pushover_token` TEXT,
   `role` TEXT NOT NULL,
   `disabled` INTEGER NOT NULL DEFAULT 0
 );
@@ -58,6 +61,10 @@ CREATE TABLE IF NOT EXISTS `sensors` (
   `sensor_id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `name` TEXT NOT NULL,
   `token` TEXT NOT NULL UNIQUE,
+  `min_temperature` NUMERIC,
+  `max_temperature` NUMERIC,
+  `min_humidity` NUMERIC,
+  `max_humidity` NUMERIC,
   `disabled` INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS `readings` (
@@ -142,7 +149,7 @@ EOQ;
     return false;
   }
 
-  public function createUser($pincode, $first_name, $last_name = null, $email = null, $role) {
+  public function createUser($pincode, $first_name, $last_name = null, $email = null, $pushover_user = null, $pushover_token = null, $role) {
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
 SELECT COUNT(*)
@@ -153,18 +160,20 @@ EOQ;
       $first_name = $this->dbConn->escapeString($first_name);
       $last_name = $this->dbConn->escapeString($last_name);
       $email = $this->dbConn->escapeString($email);
+      $pushover_user = $this->dbConn->escapeString($pushover_user);
+      $pushover_token = $this->dbConn->escapeString($pushover_token);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 INSERT
-INTO `users` (`pincode`, `first_name`, `last_name`, `email`, `role`)
-VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$email}', '{$role}');
+INTO `users` (`pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`)
+VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$email}', '{$pushover_user}', '{$pushover_token}', '{$role}');
 EOQ;
       return $this->dbConn->exec($query);
     }
     return false;
   }
 
-  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $email = null, $role) {
+  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $email = null, $pushover_user = null, $pushover_token = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
@@ -177,10 +186,19 @@ EOQ;
       $first_name = $this->dbConn->escapeString($first_name);
       $last_name = $this->dbConn->escapeString($last_name);
       $email = $this->dbConn->escapeString($email);
+      $pushover_user = $this->dbConn->escapeString($pushover_user);
+      $pushover_token = $this->dbConn->escapeString($pushover_token);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 UPDATE `users`
-SET (`pincode`, `first_name`, `last_name`, `email`, `role`) = ('{$pincode}', '{$first_name}', '{$last_name}', '{$email}', '{$role}')
+SET
+  `pincode` = '{$pincode}',
+  `first_name` = '{$first_name}',
+  `last_name` = '{$last_name}',
+  `email` = '{$email}',
+  `pushover_user` = '{$pushover_user}',
+  `pushover_token` = '{$pushover_token}',
+  `role` = '{$role}'
 WHERE `user_id` = '{$user_id}';
 EOQ;
       return $this->dbConn->exec($query);
@@ -233,8 +251,8 @@ EOQ;
     return false;
   }
 
-  public function createSensor($name, $length = 16) {
-    $token = bin2hex(random_bytes($length / 2));
+  public function createSensor($name, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
+    $token = bin2hex(random_bytes(8));
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `sensors`
@@ -242,17 +260,21 @@ WHERE `token` LIKE '{$token}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
+      $min_temperature = $this->dbConn->escapeString($min_temperature);
+      $max_temperature = $this->dbConn->escapeString($max_temperature);
+      $min_humidity = $this->dbConn->escapeString($min_humidity);
+      $max_humidity = $this->dbConn->escapeString($max_humidity);
       $query = <<<EOQ
 INSERT
-INTO `sensors` (`name`, `token`)
-VALUES ('{$name}', '{$token}');
+INTO `sensors` (`name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`)
+VALUES ('{$name}', '{$token}', '{$min_temperature}', '{$max_temperature}', '{$min_humidity}', '{$max_humidity}');
 EOQ;
       return $this->dbConn->exec($query);
     }
     return false;
   }
 
-  public function updateSensor($sensor_id, $name, $token) {
+  public function updateSensor($sensor_id, $name, $token, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $token = $this->dbConn->escapeString($token);
     $query = <<<EOQ
@@ -263,9 +285,19 @@ AND `token` LIKE '{$token}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
+      $min_temperature = $this->dbConn->escapeString($min_temperature);
+      $max_temperature = $this->dbConn->escapeString($max_temperature);
+      $min_humidity = $this->dbConn->escapeString($min_humidity);
+      $max_humidity = $this->dbConn->escapeString($max_humidity);
       $query = <<<EOQ
 UPDATE `sensors`
-SET (`name`, `token`) = ('{$name}', '{$token}')
+SET
+  `name` = '{$name}',
+  `token` = '{$token}',
+  `min_temperature` = '{$min_temperature}',
+  `max_temperature` = '{$max_temperature}',
+  `min_humidity` = '{$min_humidity}',
+  `max_humidity` = '{$max_humidity}'
 WHERE `sensor_id` = '{$sensor_id}';
 EOQ;
       return $this->dbConn->exec($query);
@@ -303,7 +335,7 @@ EOQ;
 
   public function getUsers() {
     $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `role`, `disabled`
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`, `disabled`
 FROM `users`
 ORDER BY `last_name`, `first_name`
 EOQ;
@@ -320,7 +352,7 @@ EOQ;
   public function getUserDetails($user_id) {
     $user_id = $this->dbConn->escapeString($user_id);
     $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `role`, `disabled`
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`, `disabled`
 FROM `users`
 WHERE `user_id` = '{$user_id}';
 EOQ;
@@ -332,7 +364,7 @@ EOQ;
 
   public function getSensors() {
     $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `disabled`
+SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
 FROM `sensors`
 ORDER BY `name`
 EOQ;
@@ -349,7 +381,7 @@ EOQ;
   public function getSensorDetails($sensor_id) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`
+SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`
 FROM `sensors`
 WHERE `sensor_id` = '{$sensor_id}'
 EOQ;
@@ -374,9 +406,9 @@ EOQ;
     return false;
   }
 
-  public function getReadings($sensor_id, $days = null, $granularity = null) {
+  public function getReadings($sensor_id, $days, $granularity = null) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $days = !empty($days) ? $this->dbConn->escapeString($days) : 1;
+    $days = $this->dbConn->escapeString($days);
     switch ($granularity) {
       case 'y':
       case 'year':
