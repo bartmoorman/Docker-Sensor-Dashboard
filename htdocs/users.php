@@ -1,12 +1,11 @@
 <?php
 require_once('inc/dashboard.class.php');
 $dashboard = new Dashboard(true, true, true, false);
-$currentPage = !empty($_REQUEST['page']) ? $_REQUEST['page'] : 1;
 ?>
 <!DOCTYPE html>
 <html lang='en'>
   <head>
-    <title>Sensor Dashboard - Sensors</title>
+    <title>Dashboard - Users</title>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
     <link rel='stylesheet' href='//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>
@@ -25,34 +24,33 @@ $currentPage = !empty($_REQUEST['page']) ? $_REQUEST['page'] : 1;
         <thead>
           <tr>
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
-            <th>Name</th>
-            <th>Token</th>
+            <th>Pin Code</th>
+            <th>User Name</th>
+            <th>Email</th>
+            <th>Role</th>
           </tr>
         </thead>
         <tbody>
 <?php
-foreach ($dashboard->getSensors() as $sensor) {
-  $tableClass = $sensor['disabled'] ? 'text-danger' : 'table-default';
+foreach ($dashboard->getUsers() as $user) {
+  $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
+  $tableClass = $user['disabled'] ? 'text-danger' : 'table-default';
   echo "          <tr class='{$tableClass}'>" . PHP_EOL;
-  if ($sensor['disabled']) {
-    echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-sensor_id='{$sensor['sensor_id']}'>Enable</button></td>" . PHP_EOL;
+  if ($user['disabled']) {
+    echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-user_id='{$user['user_id']}'>Enable</button></td>" . PHP_EOL;
   } else {
-    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-edit' data-sensor_id='{$sensor['sensor_id']}'>Edit</button></td>" . PHP_EOL;
+    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-edit' data-user_id='{$user['user_id']}'>Edit</button></td>" . PHP_EOL;
   }
-  echo "            <td>{$sensor['name']}</td>" . PHP_EOL;
-  echo "            <td>{$sensor['token']}</td>" . PHP_EOL;
+  echo "            <td>{$user['pincode']}</td>" . PHP_EOL;
+  echo "            <td>{$user_name}</td>" . PHP_EOL;
+  echo "            <td>{$user['email']}</td>" . PHP_EOL;
+  echo "            <td>{$user['role']}</td>" . PHP_EOL;
   echo "          </tr>" . PHP_EOL;
 }
 ?>
         </tbody>
       </table>
     </div>
-    <nav>
-      <ul class='pagination justify-content-center'>
-<?php
-?>
-      </ul>
-    </nav>
     <div class='modal fade id-modal'>
       <div class='modal-dialog'>
         <div class='modal-content'>
@@ -63,8 +61,15 @@ foreach ($dashboard->getSensors() as $sensor) {
             <div class='modal-body'>
               <div class='form-row justify-content-center'>
                 <div class='col-auto'>
-                  <input class='form-control' id='name' type='text' name='name' placeholder='Sensor Name' required>
-                  <input class='form-control id-token' id='token' type='text' name='token' placeholder='Access Token' minlength='10' required>
+                  <input class='form-control' id='pincode' type='tel' name='pincode' placeholder='Numeric Pin Code' minlegth='6' maxlength='6' pattern='[0-9]{6}' required>
+                  <input class='form-control' id='first_name' type='text' name='first_name' placeholder='First Name' required>
+                  <input class='form-control' id='last_name' type='text' name='last_name' placeholder='Last Name (optional)'>
+                  <input class='form-control' id='email' type='email' name='email' placeholder='Email (optional)'>
+                  <select class='form-control' id='role' name='role' required>
+                    <option disabled>Role</option>
+                    <option value='user'>user</option>
+                    <option value='admin'>admin</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -86,39 +91,40 @@ foreach ($dashboard->getSensors() as $sensor) {
     <script>
       $(document).ready(function() {
         $('button.id-add').click(function() {
-          $('h5.modal-title').text('Add Sensor');
-          $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
-          $('input.id-token').addClass('d-none').prop('required', false);
-          $('button.id-modify.id-volatile').addClass('d-none').removeData('sensor_id');
+          $('h5.modal-title').text('Add User');
+          $('form').removeData('user_id').data('func', 'createUser').trigger('reset');
+          $('button.id-modify.id-volatile').addClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
         });
 
         $('button.id-edit').click(function() {
-          $('h5.modal-title').text('Edit Sensor');
-          $('form').removeData('sensor_id').data('func', 'updateSensor').trigger('reset');
-          $('input.id-token').removeClass('d-none').prop('required', true);
-          $('button.id-modify.id-volatile').removeClass('d-none').removeData('sensor_id');
+          $('h5.modal-title').text('Edit User');
+          $('form').removeData('user_id').data('func', 'updateUser').trigger('reset');
+          $('button.id-modify.id-volatile').removeClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
-          $.getJSON('src/action.php', {"func": "sensorDetails", "sensor_id": $(this).data('sensor_id')})
+          $.getJSON('src/action.php', {"func": "userDetails", "user_id": $(this).data('user_id')})
             .done(function(data) {
               if (data.success) {
-                sensor = data.data;
-                $('form').data('sensor_id', sensor.sensor_id);
-                $('#name').val(sensor.name);
-                $('#token').val(sensor.token);
-                $('button.id-modify.id-volatile').data('sensor_id', sensor.sensor_id);
+                user = data.data;
+                $('form').data('user_id', user.user_id);
+                $('#pincode').val(user.pincode);
+                $('#first_name').val(user.first_name);
+                $('#last_name').val(user.last_name);
+                $('#email').val(user.email);
+                $('#role').val(user.role);
+                $('button.id-modify.id-volatile').data('user_id', user.user_id);
                 $('div.id-modal').modal('toggle');
               }
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`sensorDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+              console.log(`userDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
             });
         });
 
-       $('button.id-modify').click(function() {
-          if (confirm(`Want to ${$(this).data('action').toUpperCase()} sensor ${$(this).data('sensor_id')}?`)) {
-            $.getJSON('src/action.php', {"func": "modifySensor", "action": $(this).data('action'), "sensor_id": $(this).data('sensor_id')})
+        $('button.id-modify').click(function() {
+          if (confirm(`Want to ${$(this).data('action').toUpperCase()} user ${$(this).data('user_id')}?`)) {
+            $.getJSON('src/action.php', {"func": "modifyUser", "action": $(this).data('action'), "user_id": $(this).data('user_id')})
               .done(function(data) {
                 if (data.success) {
                   location.reload();
@@ -132,7 +138,7 @@ foreach ($dashboard->getSensors() as $sensor) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.getJSON('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "token": $('#token').val()})
+          $.getJSON('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "pincode": $('#pincode').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "email": $('#email').val(), "role": $('#role').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();

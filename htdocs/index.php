@@ -1,11 +1,11 @@
 <?php
 require_once('inc/dashboard.class.php');
-$dashboard = new Dashboard();
+$dashboard = new Dashboard(true, true, false, false);
 ?>
 <!DOCTYPE html>
 <html lang='en'>
   <head>
-    <title>Sensor - Index</title>
+    <title>Sensor Dashboard - Index</title>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
     <link rel='stylesheet' href='//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>
@@ -15,7 +15,7 @@ $dashboard = new Dashboard();
   <body>
     <nav class='navbar'>
       <button class='btn btn-sm btn-outline-success id-nav' data-href='<?php echo dirname($_SERVER['PHP_SELF']) ?>'>Home</button>
-      <select class='btn btn-sm btn-outline-success ml-auto id-sensor-id'>
+      <select class='btn btn-lg btn-outline-success ml-auto id-sensor-id'>
         <option value='0'>Sensor</option>
 <?php
 foreach ($dashboard->getSensors() as $sensor) {
