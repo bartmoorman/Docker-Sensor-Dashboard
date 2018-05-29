@@ -72,10 +72,10 @@ foreach ($dashboard->getSensors() as $sensor) {
                 <div class='col-auto'>
                   <input class='form-control' id='name' type='text' name='name' placeholder='Sensor Name' required>
                   <input class='form-control id-token' id='token' type='text' name='token' placeholder='Access Token' minlength='16' maxlength='16' pattern='[a-z0-9]{16}' required>
-                  <input class='form-control' id='min_temperature' type='tel' name='min_temperature' placeholder='Min Temperature (&deg;C)' minlength='1' maxlength='3' pattern='-?[0-9]{1,2}'>
-                  <input class='form-control' id='max_temperature' type='tel' name='max_temperature' placeholder='Max Temperature (&deg;C)' minlength='1' maxlength='3' pattern='-?[0-9]{1,2}'>
-                  <input class='form-control' id='min_humidity' type='tel' name='min_humidity' placeholder='Min Humidity (&percnt;)' minlength='1' maxlength='3' pattern='[0-9]{1,3}'>
-                  <input class='form-control' id='max_humidity' type='tel' name='max_humidity' placeholder='Max Humidity (&percnt;)' minlength='1' maxlength='3' pattern='[0-9]{1,3}'>
+                  <input class='form-control' id='min_temperature' type='number' name='min_temperature' placeholder='Min Temperature (&deg;C)' min='-40' max='80' step='0.1'>
+                  <input class='form-control' id='max_temperature' type='number' name='max_temperature' placeholder='Max Temperature (&deg;C)' min='-40' max='80' step='0.1'>
+                  <input class='form-control' id='min_humidity' type='number' name='min_humidity' placeholder='Min Humidity (&percnt;)' min='0' max='100' step='0.1'>
+                  <input class='form-control' id='max_humidity' type='number' name='max_humidity' placeholder='Max Humidity (&percnt;)' min='0' max='100' step='0.1'>
                 </div>
               </div>
             </div>
@@ -92,8 +92,6 @@ foreach ($dashboard->getSensors() as $sensor) {
     <script src='//code.jquery.com/jquery-3.2.1.min.js' integrity='sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f' crossorigin='anonymous'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>
     <script src='//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>
-    <script src='//cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.min.js' integrity='sha384-p+MfR+v7kwvUVHmsjMiBK3x45fpY3zmJ5X2FICvDqhVP5YJHjfbFDc9f5U1Eba88' crossorigin='anonymous'></script>
-    <script src='//cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/jquery.URI.min.js' integrity='sha384-zdBrwYVf1Tu1JfO1GKzBAmCOduwha4jbqoCt2886bKrIFyAslJauxsn9JUKj6col' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
         $('button.id-add').click(function() {

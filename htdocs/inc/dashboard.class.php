@@ -149,6 +149,20 @@ EOQ;
     return false;
   }
 
+  public function putSessionDetail($key, $value) {
+    if ($_SESSION[$key] = $value) {
+      return true;
+    }
+    return false;
+  }
+
+  public function getSessionDetails() {
+    if (!empty($_SESSION)) {
+      return $_SESSION;
+    }
+    return false;
+  }
+
   public function createUser($pincode, $first_name, $last_name = null, $email = null, $pushover_user = null, $pushover_token = null, $role) {
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
@@ -406,24 +420,42 @@ EOQ;
     return false;
   }
 
-  public function getReadings($sensor_id, $days, $granularity = null) {
+  public function getMinMax($sensor_id, $hours) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $days = $this->dbConn->escapeString($days);
-    switch ($granularity) {
-      case 'y':
-      case 'year':
-        $granule = '%Y';
-        break;
-      case 'm':
-      case 'month':
+    $hours = $this->dbConn->escapeString($hours);
+    $query = <<<EOQ
+SELECT ROUND(MIN(`temperature`), 1) AS `min_temperature`, ROUND(MAX(`temperature`), 1) AS `max_temperature`, ROUND(MIN(`humidity`), 1) AS `min_humidity`, ROUND(MAX(`humidity`), 1) AS `max_humidity`
+FROM `readings`
+WHERE `sensor_id` = '${sensor_id}'
+AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'))
+EOQ;
+    if ($reading = $this->dbConn->querySingle($query, true)) {
+      $output = array(
+        'temperature' => array(
+          'suggestedMin' => $reading['min_temperature'] < -38.8 ? $reading['min_temperature'] : $reading['min_temperature'] - 1.2,
+          'suggestedMax' => $reading['max_temperature'] > 78.8 ? $reading['max_temperature'] : $reading['max_temperature'] + 1.2
+        ),
+        'humidity' => array(
+          'suggestedMin' => $reading['min_humidity'] < 1 ? $reading['min_humidity'] : $reading['min_humidity'] - 1,
+          'suggestedMax' => $reading['max_humidity'] > 99 ? $reading['max_humidity'] : $reading['max_humidity'] + 1
+        )
+      );
+      return $output;
+    }
+    return false;
+  }
+
+  public function getReadings($sensor_id, $hours) {
+    $sensor_id = $this->dbConn->escapeString($sensor_id);
+    $hours = $this->dbConn->escapeString($hours);
+    switch (true) {
+      case $hours >= 24 * 30 * 12:
         $granule = '%Y-%m';
         break;
-      case 'd':
-      case 'day':
+      case $hours >= 24 * 30:
         $granule = '%Y-%m-%d';
         break;
-      case 'h':
-      case 'hour':
+      case $hours >= 24:
         $granule = '%Y-%m-%dT%H';
         break;
       default:
@@ -433,7 +465,7 @@ EOQ;
 SELECT STRFTIME('{$granule}', DATETIME(`date`, 'unixepoch'), 'localtime') AS `date`, ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
 FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
-AND `date` > STRFTIME('%s', DATETIME('now', '-{$days} days'))
+AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'))
 GROUP BY STRFTIME('{$granule}', DATETIME(`date`, 'unixepoch'))
 ORDER BY `date`
 EOQ;

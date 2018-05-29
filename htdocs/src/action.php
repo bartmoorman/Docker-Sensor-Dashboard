@@ -17,6 +17,33 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'No pincode supplied';
     }
     break;
+  case 'putSessionDetail':
+    if ($dashboard->isValidSession()) {
+      if (!empty($_REQUEST['key']) && !empty($_REQUEST['value'])) {
+        $output['success'] = $dashboard->putSessionDetail($_REQUEST['key'], $_REQUEST['value']);
+        $logEvent = false;
+      } else {
+        $output['success'] = false;
+        $output['message'] = 'Missing arguments';
+      }
+    } else {
+      $output['success'] = false;
+      $output['message'] = 'Unauthorized';
+    }
+    break;
+  case 'getSessionDetails':
+    if ($dashboard->isValidSession()) {
+      if ($output['data'] = $dashboard->getSessionDetails()) {
+        $output['success'] = true;
+        $logEvent = false;
+      } else {
+        $output['success'] = false;
+      }
+    } else {
+      $output['success'] = false;
+      $output['message'] = 'Unauthorized';
+    }
+    break;
   case 'createUser':
     if (!$dashboard->isConfigured() || ($dashboard->isValidSession() && $dashboard->isAdmin())) {
       if (!empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
@@ -164,12 +191,11 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'Missing arguments';
     }
     break;
+  case 'getMinMax':
   case 'getReadings':
     if ($dashboard->isValidSession()) {
-      if (!empty($_REQUEST['sensor_id'])) {
-        $days = !empty($_REQUEST['days']) ? $_REQUEST['days'] : 1;
-        $granularity = !empty($_REQUEST['granularity']) ? $_REQUEST['granularity'] : null;
-        if ($output['data'] = $dashboard->getReadings($_REQUEST['sensor_id'], $days, $granularity)) {
+      if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['hours'])) {
+        if ($output['data'] = $dashboard->{$_REQUEST['func']}($_REQUEST['sensor_id'], $_REQUEST['hours'])) {
           $output['success'] = true;
           $logEvent = false;
         } else {
@@ -178,7 +204,7 @@ switch ($_REQUEST['func']) {
         }
       } else {
         $output['success'] = false;
-        $output['message'] = 'No sensor id supplied';
+        $output['message'] = 'Missing arguments';
       }
     } else {
       $output['success'] = false;

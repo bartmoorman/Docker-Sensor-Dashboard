@@ -13,19 +13,32 @@ $dashboard = new Dashboard(true, true, false, false);
     <link rel='stylesheet' href='//use.fontawesome.com/releases/v5.0.12/css/all.css' integrity='sha384-G0fIWCsCzJIMAVNQPfjH08cyYaUtMwjJwqiRKxxE/rx96Uroj1BtIQ6MLJuheaO9' crossorigin='anonymous'>
   </head>
   <body>
-    <nav class='navbar'>
-      <button class='btn btn-sm btn-outline-success id-nav' data-href='<?php echo dirname($_SERVER['PHP_SELF']) ?>'>Home</button>
-      <button class='btn btn-sm btn-outline-info ml-auto mr-2 id-nav' data-href='sensors.php'>Sensors</button>
-      <button class='btn btn-sm btn-outline-info mr-2 id-nav' data-href='users.php'>Users</button>
-      <button class='btn btn-sm btn-outline-info id-nav' data-href='events.php'>Events</button>
-    </nav>
+<?php
+if ($dashboard->isAdmin()) {
+  $homeLoc = dirname($_SERVER['PHP_SELF']);
+  echo "    <nav class='navbar'>" . PHP_EOL;
+  echo "      <button class='btn btn-sm btn-outline-success id-nav' data-href='{$homeLoc}'>Home</button>" . PHP_EOL;
+  echo "      <button class='btn btn-sm btn-outline-info ml-auto mr-2 id-nav' data-href='sensors.php'>Sensors</button>" . PHP_EOL;
+  echo "      <button class='btn btn-sm btn-outline-info mr-2 id-nav' data-href='users.php'>Users</button>" . PHP_EOL;
+  echo "      <button class='btn btn-sm btn-outline-info id-nav' data-href='events.php'>Events</button>" . PHP_EOL;
+  echo "    </nav>" . PHP_EOL;
+}
+?>
     <canvas id='chart'></canvas>
     <nav class='navbar text-center'>
-      <select class='btn btn-sm btn-outline-success ml-auto mr-auto id-sensor-id'>
+      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor-id' data-key='sensor_id'>
         <option value='0'>Sensor</option>
 <?php
 foreach ($dashboard->getSensors() as $sensor) {
-  echo "        <option value='{$sensor['sensor_id']}'>{$sensor['name']}</option>";
+  echo "        <option value='{$sensor['sensor_id']}'>{$sensor['name']}</option>" . PHP_EOL;
+}
+?>
+      </select>
+      <select class='btn btn-sm btn-outline-success mr-auto id-hours' data-key='hours'>
+        <option value='0'>Period</option>
+<?php
+foreach (array(1 => '1 hour', 12 => '12 hours', 24 => '1 day', 24 * 7 => '7 days', 24 * 30 => '1 month', 24 * 365 => '12 months') as $hours => $period) {
+  echo "        <option value='{$hours}'>{$period}</option>" . PHP_EOL;
 }
 ?>
       </select>
@@ -37,44 +50,24 @@ foreach ($dashboard->getSensors() as $sensor) {
     <script src='//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js' integrity='sha384-0saKbDOWtYAw5aP4czPUm6ByY5JojfQ9Co6wDgkuM7Zn+anp+4Rj92oGK8cbV91S' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
-        if (window.location.hash) {
-          $('select.id-sensor-id').val(window.location.hash.replace('#',''));
-        }
-
-        function updateChart() {
-          $.getJSON('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor-id').val()})
-            .done(function(data) {
-              if (data.success) {
-                config.data.datasets[0].data = data.data.temperatureData;
-                config.data.datasets[1].data = data.data.humidityData;
-              }
-            })
-            .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`getReadings failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
-            })
-            .always(function() {
-              chart.update();
-            });
-
-          timer = setTimeout(updateChart, 5000);
-        };
-
         var timer;
         var config = {
           type: 'line',
           data: {
             datasets: [{
               label: 'Temperature',
-              backgroundColor: 'rgba(255, 0, 0, 0.1)',
+              backgroundColor: 'rgba(255, 0, 0, 0.3)',
               borderColor: 'rgb(255, 0, 0)',
               borderWidth: 1,
+              pointRadius: 0,
               fill: false,
               yAxisID: 'temperature'
             }, {
               label: 'Humidity',
-              backgroundColor: 'rgba(0, 0, 255, 0.1)',
+              backgroundColor: 'rgba(0, 0, 255, 0.3)',
               borderColor: 'rgb(0, 0, 255)',
               borderWidth: 1,
+              pointRadius: 0,
               fill: false,
               yAxisID: 'humidity'
             }]
@@ -100,17 +93,71 @@ foreach ($dashboard->getSensors() as $sensor) {
         };
         var chart = new Chart($('#chart'), config);
 
-        $('select.id-sensor-id').change(function() {
+        function getMinMax() {
+          $.getJSON('src/action.php', {"func": "getMinMax", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
+            .done(function(data) {
+              if (data.success) {
+                config.options.scales.yAxes[0].ticks = data.data.temperature;
+                config.options.scales.yAxes[1].ticks = data.data.humidity;
+              }
+            })
+            .fail(function(jqxhr, textStatus, errorThrown) {
+              console.log(`getMinMax failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+            })
+            .always(function() {
+            });
+        }
+
+        function updateChart() {
+          $.getJSON('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
+            .done(function(data) {
+              if (data.success) {
+                config.data.datasets[0].data = data.data.temperatureData;
+                config.data.datasets[1].data = data.data.humidityData;
+              }
+            })
+            .fail(function(jqxhr, textStatus, errorThrown) {
+              console.log(`getReadings failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+            })
+            .always(function() {
+              chart.update();
+            });
+
+          timer = setTimeout(updateChart, 60 * 1000);
+        };
+
+        $.getJSON('src/action.php', {"func": "getSessionDetails"})
+          .done(function(data) {
+            if (data.success) {
+              $('select.id-sensor-id').val(data.data.sensor_id && data.data.sensor_id || 0);
+              $('select.id-hours').val(data.data.hours && data.data.hours || 0);
+            }
+          })
+          .fail(function(jqxhr, textStatus, errorThrown) {
+            console.log(`getSessionDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+          })
+          .always(function() {
+            if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
+              getMinMax();
+              updateChart();
+            }
+          });
+
+        $('select.id-sensor-id, select.id-hours').change(function() {
           clearTimeout(timer);
-          window.location.hash = $(this).val();
-          updateChart();
+          if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
+            getMinMax();
+            updateChart();
+          }
+          $.getJSON('src/action.php', {"func": "putSessionDetail", "key": $(this).data('key'), "value": $(this).val()})
+            .fail(function(jqxhr, textStatus, errorThrown) {
+              console.log(`putSessionDetailo failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+            });
         });
 
         $('button.id-nav').click(function() {
           location.href=$(this).data('href');
         });
-
-        updateChart();
       });
     </script>
   </body>
