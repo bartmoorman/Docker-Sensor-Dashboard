@@ -24,7 +24,8 @@ RUN echo 'deb http://ppa.launchpad.net/certbot/certbot/ubuntu xenial main' > /et
  && rm --recursive --force /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY apache2/ /etc/apache2/
-Copy htdocs/ /var/www/html/
+COPY htdocs/ /var/www/html/
+COPY bin/ /usr/local/bin/
 
 VOLUME /config
 

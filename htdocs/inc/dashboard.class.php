@@ -65,17 +65,24 @@ CREATE TABLE IF NOT EXISTS `sensors` (
   `max_temperature` NUMERIC,
   `min_humidity` NUMERIC,
   `max_humidity` NUMERIC,
+  `notified_min_temperature` INTEGER NOT NULL DEFAULT 0,
+  `notified_max_temperature` INTEGER NOT NULL DEFAULT 0,
+  `notified_min_humidity` INTEGER NOT NULL DEFAULT 0,
+  `notified_max_humidity` INTEGER NOT NULL DEFAULT 0,
   `disabled` INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS `readings` (
   `reading_id` INTEGER PRIMARY KEY AUTOINCREMENT,
-  `sensor_id` INTEGER NOT NULL,
   `date` INTEGER DEFAULT (STRFTIME('%s', 'now')),
+  `sensor_id` INTEGER NOT NULL,
   `temperature` NUMERIC,
   `humidity` NUMERIC
 );
 EOQ;
-    return $this->dbConn->exec($query);
+    if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
   }
 
   public function isConfigured() {
@@ -182,7 +189,9 @@ INSERT
 INTO `users` (`pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`)
 VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$email}', '{$pushover_user}', '{$pushover_token}', '{$role}');
 EOQ;
-      return $this->dbConn->exec($query);
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
     }
     return false;
   }
@@ -215,7 +224,9 @@ SET
   `role` = '{$role}'
 WHERE `user_id` = '{$user_id}';
 EOQ;
-      return $this->dbConn->exec($query);
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
     }
     return false;
   }
@@ -248,7 +259,10 @@ WHERE `user_id` = '{$user_id}';
 EOQ;
         break;
     }
-    return $this->dbConn->exec($query);
+    if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
   }
 
   public function isValidToken($token) {
@@ -283,7 +297,9 @@ INSERT
 INTO `sensors` (`name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`)
 VALUES ('{$name}', '{$token}', '{$min_temperature}', '{$max_temperature}', '{$min_humidity}', '{$max_humidity}');
 EOQ;
-      return $this->dbConn->exec($query);
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
     }
     return false;
   }
@@ -314,7 +330,9 @@ SET
   `max_humidity` = '{$max_humidity}'
 WHERE `sensor_id` = '{$sensor_id}';
 EOQ;
-      return $this->dbConn->exec($query);
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
     }
     return false;
   }
@@ -344,14 +362,17 @@ WHERE `sensor_id` = '{$sensor_id}';
 EOQ;
         break;
     }
-    return $this->dbConn->exec($query);
+    if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
   }
 
   public function getUsers() {
     $query = <<<EOQ
 SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`, `disabled`
 FROM `users`
-ORDER BY `last_name`, `first_name`
+ORDER BY `last_name`, `first_name`;
 EOQ;
     if ($users = $this->dbConn->query($query)) {
       $output = array();
@@ -380,7 +401,7 @@ EOQ;
     $query = <<<EOQ
 SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
 FROM `sensors`
-ORDER BY `name`
+ORDER BY `name`;
 EOQ;
     if ($sensors = $this->dbConn->query($query)) {
       $output = array();
@@ -397,7 +418,7 @@ EOQ;
     $query = <<<EOQ
 SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`
 FROM `sensors`
-WHERE `sensor_id` = '{$sensor_id}'
+WHERE `sensor_id` = '{$sensor_id}';
 EOQ;
     if ($sensor = $this->dbConn->querySingle($query, true)) {
       return $sensor;
@@ -408,39 +429,23 @@ EOQ;
   public function putReading($token, $temperature, $humidity) {
     $token = $this->dbConn->escapeString($token);
     if ($this->isValidToken($token)) {
-      $temperature = $this->dbConn->escapeString($temperature);
-      $humidity = $this->dbConn->escapeString($humidity);
       $query = <<<EOQ
+SELECT `sensor_id`
+FROM `sensors`
+WHERE `token` LIKE '{$token}';
+EOQ;
+      if ($sensor_id = $this->dbConn->querySingle($query)) {
+        $temperature = $this->dbConn->escapeString($temperature);
+        $humidity = $this->dbConn->escapeString($humidity);
+        $query = <<<EOQ
 INSERT
 INTO `readings` (`sensor_id`, `temperature`, `humidity`)
-VALUES ((SELECT `sensor_id` FROM `sensors` WHERE `token` LIKE '{$token}'), '{$temperature}', '{$humidity}');
+VALUES ('{$sensor_id}', '{$temperature}', '{$humidity}');
 EOQ;
-      return $this->dbConn->exec($query);
-    }
-    return false;
-  }
-
-  public function getMinMax($sensor_id, $hours) {
-    $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $hours = $this->dbConn->escapeString($hours);
-    $query = <<<EOQ
-SELECT ROUND(MIN(`temperature`), 1) AS `min_temperature`, ROUND(MAX(`temperature`), 1) AS `max_temperature`, ROUND(MIN(`humidity`), 1) AS `min_humidity`, ROUND(MAX(`humidity`), 1) AS `max_humidity`
-FROM `readings`
-WHERE `sensor_id` = '${sensor_id}'
-AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'))
-EOQ;
-    if ($reading = $this->dbConn->querySingle($query, true)) {
-      $output = array(
-        'temperature' => array(
-          'suggestedMin' => $reading['min_temperature'] < -38.8 ? $reading['min_temperature'] : $reading['min_temperature'] - 1.2,
-          'suggestedMax' => $reading['max_temperature'] > 78.8 ? $reading['max_temperature'] : $reading['max_temperature'] + 1.2
-        ),
-        'humidity' => array(
-          'suggestedMin' => $reading['min_humidity'] < 1 ? $reading['min_humidity'] : $reading['min_humidity'] - 1,
-          'suggestedMax' => $reading['max_humidity'] > 99 ? $reading['max_humidity'] : $reading['max_humidity'] + 1
-        )
-      );
-      return $output;
+        if ($this->dbConn->exec($query)) {
+          return true;
+        }
+      }
     }
     return false;
   }
@@ -467,7 +472,7 @@ FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
 AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'))
 GROUP BY STRFTIME('{$granule}', DATETIME(`date`, 'unixepoch'))
-ORDER BY `date`
+ORDER BY `date`;
 EOQ;
     if ($readings = $this->dbConn->query($query)) {
       $output = array('temperatureData' => array(), 'humidityData' => array());
@@ -476,6 +481,78 @@ EOQ;
         $output['humidityData'][] = array('x' => $reading['date'], 'y' => $reading['humidity']);
       }
       return $output;
+    }
+    return false;
+  }
+
+  public function getMinMax($sensor_id, $hours) {
+    $sensor_id = $this->dbConn->escapeString($sensor_id);
+    $hours = $this->dbConn->escapeString($hours);
+    $query = <<<EOQ
+SELECT ROUND(MIN(`temperature`), 1) AS `min_temperature`, ROUND(MAX(`temperature`), 1) AS `max_temperature`, ROUND(MIN(`humidity`), 1) AS `min_humidity`, ROUND(MAX(`humidity`), 1) AS `max_humidity`
+FROM `readings`
+WHERE `sensor_id` = '${sensor_id}'
+AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'));
+EOQ;
+    if ($reading = $this->dbConn->querySingle($query, true)) {
+      $output = array(
+        'temperature' => array(
+          'suggestedMin' => $reading['min_temperature'] < -38.8 ? $reading['min_temperature'] : $reading['min_temperature'] - 1.2,
+          'suggestedMax' => $reading['max_temperature'] > 78.8 ? $reading['max_temperature'] : $reading['max_temperature'] + 1.2
+        ),
+        'humidity' => array(
+          'suggestedMin' => $reading['min_humidity'] < 1 ? $reading['min_humidity'] : $reading['min_humidity'] - 1,
+          'suggestedMax' => $reading['max_humidity'] > 99 ? $reading['max_humidity'] : $reading['max_humidity'] + 1
+        )
+      );
+      return $output;
+    }
+    return false;
+  }
+
+  public function putSensorNotification($sensor_id, $type, $value) {
+    $sensor_id = $this->dbConn->escapeString($sensor_id);
+    $type = $this->dbConn->escapeString($type);
+    $value = $this->dbConn->escapeString($value);
+    $query = <<<EOQ
+UPDATE `sensors`
+SET `{$type}` = '{$value}'
+WHERE `sensor_id` = '{$sensor_id}'
+EOQ;
+    if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
+  }
+
+  public function getSensorNotifications() {
+    $query = <<<EOQ
+SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`
+FROM `sensors`
+WHERE `min_temperature` OR `max_temperature` OR `min_humidity` OR `max_humidity`
+AND NOT `disabled`;
+EOQ;
+    if ($sensors = $this->dbConn->query($query)) {
+      $output = array();
+      while ($sensor = $sensors->fetchArray(SQLITE3_ASSOC)) {
+        $output[] = $sensor;
+      }
+      return $output;
+    }
+    return false;
+  }
+
+  public function getAverage($sensor_id, $minutes) {
+    $sensor_id = $this->dbConn->escapeString($sensor_id);
+    $minutes = $this->dbConn->escapeString($minutes);
+    $query = <<<EOQ
+SELECT ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
+FROM `readings`
+WHERE `sensor_id` = '{$sensor_id}'
+AND `date` > STRFTIME('%s', DATETIME('now', '-{$minutes} minutes'));
+EOQ;
+    if ($reading = $this->dbConn->querySingle($query, true)) {
+      return $reading;
     }
     return false;
   }
@@ -490,7 +567,10 @@ INSERT
 INTO `events` (`user_id`, `action`, `message`, `remote_addr`)
 VALUES ('{$user_id}', '{$action}', '{$message}', '{$remote_addr}');
 EOQ;
-    return $this->dbConn->exec($query);
+    if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
   }
 
   public function getCount($type) {

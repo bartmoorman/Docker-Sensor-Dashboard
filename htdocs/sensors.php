@@ -25,11 +25,11 @@ $dashboard = new Dashboard(true, true, true, false);
           <tr>
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
             <th>Name</th>
+            <th>Token</th>
             <th>Min Temp.</th>
             <th>Max Temp.</th>
             <th>Min Hum.</th>
             <th>Max Hum.</th>
-            <th>Token</th>
           </tr>
         </thead>
         <tbody>
@@ -43,11 +43,11 @@ foreach ($dashboard->getSensors() as $sensor) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-edit' data-sensor_id='{$sensor['sensor_id']}'>Edit</button></td>" . PHP_EOL;
   }
   echo "            <td>{$sensor['name']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['token']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['min_temperature']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['max_temperature']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['min_humidity']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['max_humidity']}</td>" . PHP_EOL;
-  echo "            <td>{$sensor['token']}</td>" . PHP_EOL;
   echo "          </tr>" . PHP_EOL;
 }
 ?>
