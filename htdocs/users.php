@@ -26,7 +26,6 @@ $dashboard = new Dashboard(true, true, true, false);
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
             <th>Pin Code</th>
             <th>User Name</th>
-            <th>Email</th>
             <th>Pushover User</th>
             <th>Pushover Token</th>
             <th>Role</th>
@@ -45,7 +44,6 @@ foreach ($dashboard->getUsers() as $user) {
   }
   echo "            <td>{$user['pincode']}</td>" . PHP_EOL;
   echo "            <td>{$user_name}</td>" . PHP_EOL;
-  echo "            <td>{$user['email']}</td>" . PHP_EOL;
   echo "            <td>{$user['pushover_user']}</td>" . PHP_EOL;
   echo "            <td>{$user['pushover_token']}</td>" . PHP_EOL;
   echo "            <td>{$user['role']}</td>" . PHP_EOL;
@@ -68,7 +66,6 @@ foreach ($dashboard->getUsers() as $user) {
                   <input class='form-control' id='pincode' type='tel' name='pincode' placeholder='Numeric Pin Code' minlegth='6' maxlength='6' pattern='[0-9]{6}' required>
                   <input class='form-control' id='first_name' type='text' name='first_name' placeholder='First Name' required>
                   <input class='form-control' id='last_name' type='text' name='last_name' placeholder='Last Name (optional)'>
-                  <input class='form-control' id='email' type='email' name='email' placeholder='Email (optional)'>
                   <input class='form-control' id='pushover_user' type='text' name='pushover_user' placeholder='Pushover User (optional)' minlegth='30' maxlength='30' pattern='[a-z0-9]{30}'>
                   <input class='form-control' id='pushover_token' type='text' name='pushover_token' placeholder='Pushover Token (optional)' minlegth='30' maxlength='30' pattern='[a-z0-9]{30}'>
                   <select class='form-control' id='role' name='role' required>
@@ -115,7 +112,6 @@ foreach ($dashboard->getUsers() as $user) {
                 $('#pincode').val(user.pincode);
                 $('#first_name').val(user.first_name);
                 $('#last_name').val(user.last_name);
-                $('#email').val(user.email);
                 $('#pushover_user').val(user.pushover_user);
                 $('#pushover_token').val(user.pushover_token);
                 $('#role').val(user.role);
@@ -144,7 +140,7 @@ foreach ($dashboard->getUsers() as $user) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.getJSON('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "pincode": $('#pincode').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "email": $('#email').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "role": $('#role').val()})
+          $.getJSON('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "pincode": $('#pincode').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "role": $('#role').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();

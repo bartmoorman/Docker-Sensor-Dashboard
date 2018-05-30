@@ -4,7 +4,7 @@ $dashboard = new Dashboard(false, false, false, false);
 
 $output = $logFields = array('success' => null, 'message' => null);
 $log = array();
-$logEvent = true;
+$putEvent = true;
 
 switch ($_REQUEST['func']) {
   case 'validatePinCode':
@@ -21,7 +21,7 @@ switch ($_REQUEST['func']) {
     if ($dashboard->isValidSession()) {
       if (!empty($_REQUEST['key']) && !empty($_REQUEST['value'])) {
         $output['success'] = $dashboard->putSessionDetail($_REQUEST['key'], $_REQUEST['value']);
-        $logEvent = false;
+        $putEvent = false;
       } else {
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
@@ -35,7 +35,7 @@ switch ($_REQUEST['func']) {
     if ($dashboard->isValidSession()) {
       if ($output['data'] = $dashboard->getSessionDetails()) {
         $output['success'] = true;
-        $logEvent = false;
+        $putEvent = false;
       } else {
         $output['success'] = false;
       }
@@ -48,10 +48,9 @@ switch ($_REQUEST['func']) {
     if (!$dashboard->isConfigured() || ($dashboard->isValidSession() && $dashboard->isAdmin())) {
       if (!empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
         $last_name = !empty($_REQUEST['last_name']) ? $_REQUEST['last_name'] : null;
-        $email = !empty($_REQUEST['email']) ? $_REQUEST['email'] : null;
         $pushover_user = !empty($_REQUEST['pushover_user']) ? $_REQUEST['pushover_user'] : null;
         $pushover_token = !empty($_REQUEST['pushover_token']) ? $_REQUEST['pushover_token'] : null;
-        $output['success'] = $dashboard->createUser($_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $email, $pushover_user, $pushover_token, $_REQUEST['role']);
+        $output['success'] = $dashboard->createUser($_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $_REQUEST['role']);
       } else {
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
@@ -65,10 +64,9 @@ switch ($_REQUEST['func']) {
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
       if (!empty($_REQUEST['user_id']) && !empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
         $last_name = !empty($_REQUEST['last_name']) ? $_REQUEST['last_name'] : null;
-        $email = !empty($_REQUEST['email']) ? $_REQUEST['email'] : null;
         $pushover_user = !empty($_REQUEST['pushover_user']) ? $_REQUEST['pushover_user'] : null;
         $pushover_token = !empty($_REQUEST['pushover_token']) ? $_REQUEST['pushover_token'] : null;
-        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $email, $pushover_user, $pushover_token, $_REQUEST['role']);
+        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $_REQUEST['role']);
         $log['user_id'] = $_REQUEST['user_id'];
       } else {
         $output['success'] = false;
@@ -149,7 +147,7 @@ switch ($_REQUEST['func']) {
       if (!empty($_REQUEST['user_id'])) {
         if ($output['data'] = $dashboard->getUserDetails($_REQUEST['user_id'])) {
           $output['success'] = true;
-          $logEvent = false;
+          $putEvent = false;
         } else {
           $output['success'] = false;
           $log['user_id'] = $_REQUEST['user_id'];
@@ -168,7 +166,7 @@ switch ($_REQUEST['func']) {
       if (!empty($_REQUEST['sensor_id'])) {
         if ($output['data'] = $dashboard->getSensorDetails($_REQUEST['sensor_id'])) {
           $output['success'] = true;
-          $logEvent = false;
+          $putEvent = false;
         } else {
           $output['success'] = false;
           $log['sensor_id'] = $_REQUEST['sensor_id'];
@@ -185,7 +183,7 @@ switch ($_REQUEST['func']) {
   case 'putReading':
     if (!empty($_REQUEST['token']) && !empty($_REQUEST['temperature']) && !empty($_REQUEST['humidity'])) {
       $output['success'] = $dashboard->putReading($_REQUEST['token'], $_REQUEST['temperature'], $_REQUEST['humidity']);
-      $logEvent = false;
+      $putEvent = false;
     } else {
       $output['success'] = false;
       $output['message'] = 'Missing arguments';
@@ -197,7 +195,7 @@ switch ($_REQUEST['func']) {
       if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['hours'])) {
         if ($output['data'] = $dashboard->{$_REQUEST['func']}($_REQUEST['sensor_id'], $_REQUEST['hours'])) {
           $output['success'] = true;
-          $logEvent = false;
+          $putEvent = false;
         } else {
           $output['success'] = false;
           $log['sensor_id'] = $_REQUEST['sensor_id'];
@@ -213,8 +211,8 @@ switch ($_REQUEST['func']) {
     break;
 }
 
-if ($logEvent) {
-  $dashboard->logEvent($_REQUEST['func'], array_merge(array_intersect_key($output, $logFields), $log));
+if ($putEvent) {
+  $dashboard->putEvent($_REQUEST['func'], array_merge(array_intersect_key($output, $logFields), $log));
 }
 
 echo json_encode($output);

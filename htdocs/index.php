@@ -37,7 +37,18 @@ foreach ($dashboard->getSensors() as $sensor) {
       <select class='btn btn-sm btn-outline-success mr-auto id-hours' data-key='hours'>
         <option value='0'>Period</option>
 <?php
-foreach (array(1 => '1 hour', 12 => '12 hours', 24 => '1 day', 24 * 7 => '7 days', 24 * 30 => '1 month', 24 * 365 => '12 months') as $hours => $period) {
+$periods = array(
+  1 => '1 hour',
+  6 => '6 hours',
+  12 => '12 hours',
+  24 => '24 hours',
+  24 * 7 => '7 days',
+  24 * 30 => '30 days',
+  24 * 90 => '90 days',
+  24 * 180 => '180 days',
+  24 * 365 => '1 year'
+);
+foreach ($periods as $hours => $period) {
   echo "        <option value='{$hours}'>{$period}</option>" . PHP_EOL;
 }
 ?>
@@ -103,8 +114,6 @@ foreach (array(1 => '1 hour', 12 => '12 hours', 24 => '1 day', 24 * 7 => '7 days
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
               console.log(`getMinMax failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
-            })
-            .always(function() {
             });
         }
 

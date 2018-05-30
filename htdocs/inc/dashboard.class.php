@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `pincode` INTEGER NOT NULL UNIQUE,
   `first_name` TEXT NOT NULL,
   `last_name` TEXT,
-  `email` TEXT,
   `pushover_user` TEXT,
   `pushover_token` TEXT,
   `role` TEXT NOT NULL,
@@ -170,7 +169,7 @@ EOQ;
     return false;
   }
 
-  public function createUser($pincode, $first_name, $last_name = null, $email = null, $pushover_user = null, $pushover_token = null, $role) {
+  public function createUser($pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $role) {
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
 SELECT COUNT(*)
@@ -180,14 +179,13 @@ EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $first_name = $this->dbConn->escapeString($first_name);
       $last_name = $this->dbConn->escapeString($last_name);
-      $email = $this->dbConn->escapeString($email);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
       $pushover_token = $this->dbConn->escapeString($pushover_token);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 INSERT
-INTO `users` (`pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`)
-VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$email}', '{$pushover_user}', '{$pushover_token}', '{$role}');
+INTO `users` (`pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`)
+VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$role}');
 EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
@@ -196,7 +194,7 @@ EOQ;
     return false;
   }
 
-  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $email = null, $pushover_user = null, $pushover_token = null, $role) {
+  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
@@ -208,7 +206,6 @@ EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $first_name = $this->dbConn->escapeString($first_name);
       $last_name = $this->dbConn->escapeString($last_name);
-      $email = $this->dbConn->escapeString($email);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
       $pushover_token = $this->dbConn->escapeString($pushover_token);
       $role = $this->dbConn->escapeString($role);
@@ -218,7 +215,6 @@ SET
   `pincode` = '{$pincode}',
   `first_name` = '{$first_name}',
   `last_name` = '{$last_name}',
-  `email` = '{$email}',
   `pushover_user` = '{$pushover_user}',
   `pushover_token` = '{$pushover_token}',
   `role` = '{$role}'
@@ -370,7 +366,7 @@ EOQ;
 
   public function getUsers() {
     $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`, `disabled`
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
 FROM `users`
 ORDER BY `last_name`, `first_name`;
 EOQ;
@@ -387,7 +383,7 @@ EOQ;
   public function getUserDetails($user_id) {
     $user_id = $this->dbConn->escapeString($user_id);
     $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `email`, `pushover_user`, `pushover_token`, `role`, `disabled`
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
 FROM `users`
 WHERE `user_id` = '{$user_id}';
 EOQ;
@@ -454,7 +450,7 @@ EOQ;
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $hours = $this->dbConn->escapeString($hours);
     switch (true) {
-      case $hours >= 24 * 30 * 12:
+      case $hours >= 24 * 365:
         $granule = '%Y-%m';
         break;
       case $hours >= 24 * 30:
@@ -529,7 +525,7 @@ EOQ;
     $query = <<<EOQ
 SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`
 FROM `sensors`
-WHERE `min_temperature` OR `max_temperature` OR `min_humidity` OR `max_humidity`
+WHERE (LENGTH(`min_temperature`) OR LENGTH(`max_temperature`) OR LENGTH(`min_humidity`) OR LENGTH(`max_humidity`))
 AND NOT `disabled`;
 EOQ;
     if ($sensors = $this->dbConn->query($query)) {
@@ -538,6 +534,26 @@ EOQ;
         $output[] = $sensor;
       }
       return $output;
+    }
+    return false;
+  }
+
+  public function sendNotification($message) {
+    $query = <<<EOQ
+SELECT `pushover_user`, `pushover_token`
+FROM `users`
+WHERE LENGTH(`pushover_user`) AND LENGTH(`pushover_token`)
+AND NOT `disabled`
+EOQ;
+    if ($users = $this->dbConn->query($query)) {
+      $ch = curl_init('https://api.pushover.net/1/messages.json');
+      while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, array('user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+      }
+      curl_close($ch);
+      return true;
     }
     return false;
   }
@@ -557,7 +573,7 @@ EOQ;
     return false;
   }
 
-  public function logEvent($action, $message = array()) {
+  public function putEvent($action, $message = array()) {
     $user_id = array_key_exists('authenticated', $_SESSION) ? $_SESSION['user_id'] : null;
     $action = $this->dbConn->escapeString($action);
     $message = $this->dbConn->escapeString(json_encode($message));

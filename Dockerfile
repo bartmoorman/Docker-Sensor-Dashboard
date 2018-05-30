@@ -13,6 +13,7 @@ RUN echo 'deb http://ppa.launchpad.net/certbot/certbot/ubuntu xenial main' > /et
     certbot \
     curl \
     libapache2-mod-php \
+    php-curl \
     php-sqlite3 \
     ssl-cert \
  && a2enmod \
