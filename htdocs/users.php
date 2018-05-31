@@ -33,9 +33,9 @@ $dashboard = new Dashboard(true, true, true, false);
         </thead>
         <tbody>
 <?php
-foreach ($dashboard->getUsers() as $user) {
+foreach ($dashboard->getObjects('users') as $user) {
   $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
-  $tableClass = $user['disabled'] ? 'text-danger' : 'table-default';
+  $tableClass = $user['disabled'] ? 'text-warning' : 'table-default';
   echo "          <tr class='{$tableClass}'>" . PHP_EOL;
   if ($user['disabled']) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-user_id='{$user['user_id']}'>Enable</button></td>" . PHP_EOL;
@@ -66,8 +66,8 @@ foreach ($dashboard->getUsers() as $user) {
                   <input class='form-control' id='pincode' type='tel' name='pincode' placeholder='Numeric Pin Code' minlegth='6' maxlength='6' pattern='[0-9]{6}' required>
                   <input class='form-control' id='first_name' type='text' name='first_name' placeholder='First Name' required>
                   <input class='form-control' id='last_name' type='text' name='last_name' placeholder='Last Name (optional)'>
-                  <input class='form-control' id='pushover_user' type='text' name='pushover_user' placeholder='Pushover User (optional)' minlegth='30' maxlength='30' pattern='[a-z0-9]{30}'>
-                  <input class='form-control' id='pushover_token' type='text' name='pushover_token' placeholder='Pushover Token (optional)' minlegth='30' maxlength='30' pattern='[a-z0-9]{30}'>
+                  <input class='form-control' id='pushover_user' type='text' name='pushover_user' placeholder='Pushover User (optional)' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
+                  <input class='form-control' id='pushover_token' type='text' name='pushover_token' placeholder='Pushover Token (optional)' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
                   <select class='form-control' id='role' name='role' required>
                     <option disabled>Role</option>
                     <option value='user'>user</option>
@@ -104,7 +104,7 @@ foreach ($dashboard->getUsers() as $user) {
           $('form').removeData('user_id').data('func', 'updateUser').trigger('reset');
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
-          $.getJSON('src/action.php', {"func": "userDetails", "user_id": $(this).data('user_id')})
+          $.getJSON('src/action.php', {"func": "getObjectDetails", "type": "user", "value": $(this).data('user_id')})
             .done(function(data) {
               if (data.success) {
                 user = data.data;
@@ -120,13 +120,13 @@ foreach ($dashboard->getUsers() as $user) {
               }
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`userDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+              console.log(`getObjectDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
             });
         });
 
         $('button.id-modify').click(function() {
           if (confirm(`Want to ${$(this).data('action').toUpperCase()} user ${$(this).data('user_id')}?`)) {
-            $.getJSON('src/action.php', {"func": "modifyUser", "action": $(this).data('action'), "user_id": $(this).data('user_id')})
+            $.getJSON('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "user_id", "value": $(this).data('user_id')})
               .done(function(data) {
                 if (data.success) {
                   location.reload();

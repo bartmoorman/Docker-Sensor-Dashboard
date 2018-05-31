@@ -29,7 +29,7 @@ if ($dashboard->isAdmin()) {
       <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor-id' data-key='sensor_id'>
         <option value='0'>Sensor</option>
 <?php
-foreach ($dashboard->getSensors() as $sensor) {
+foreach ($dashboard->getObjects('sensors') as $sensor) {
   echo "        <option value='{$sensor['sensor_id']}'>{$sensor['name']}</option>" . PHP_EOL;
 }
 ?>
@@ -70,7 +70,7 @@ foreach ($periods as $hours => $period) {
               backgroundColor: 'rgba(255, 0, 0, 0.3)',
               borderColor: 'rgb(255, 0, 0)',
               borderWidth: 1,
-              pointRadius: 0,
+              pointRadius: 2,
               fill: false,
               yAxisID: 'temperature'
             }, {
@@ -78,7 +78,7 @@ foreach ($periods as $hours => $period) {
               backgroundColor: 'rgba(0, 0, 255, 0.3)',
               borderColor: 'rgb(0, 0, 255)',
               borderWidth: 1,
-              pointRadius: 0,
+              pointRadius: 2,
               fill: false,
               yAxisID: 'humidity'
             }]
@@ -104,8 +104,8 @@ foreach ($periods as $hours => $period) {
         };
         var chart = new Chart($('#chart'), config);
 
-        function getMinMax() {
-          $.getJSON('src/action.php', {"func": "getMinMax", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
+        function getReadingsMinMax() {
+          $.getJSON('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
                 config.options.scales.yAxes[0].ticks = data.data.temperature;
@@ -113,7 +113,7 @@ foreach ($periods as $hours => $period) {
               }
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`getMinMax failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+              console.log(`getReadingsMinMax failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
             });
         }
 
@@ -147,7 +147,7 @@ foreach ($periods as $hours => $period) {
           })
           .always(function() {
             if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
-              getMinMax();
+              getReadingsMinMax();
               updateChart();
             }
           });
@@ -155,7 +155,7 @@ foreach ($periods as $hours => $period) {
         $('select.id-sensor-id, select.id-hours').change(function() {
           clearTimeout(timer);
           if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
-            getMinMax();
+            getReadingsMinMax();
             updateChart();
           }
           $.getJSON('src/action.php', {"func": "putSessionDetail", "key": $(this).data('key'), "value": $(this).val()})

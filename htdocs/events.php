@@ -52,7 +52,7 @@ foreach ($dashboard->getEvents($currentPage) as $event) {
     <nav>
       <ul class='pagination justify-content-center'>
 <?php
-$pages = ceil($dashboard->getCount('events') / $dashboard->pageLimit);
+$pages = ceil($dashboard->getObjectCount('events') / $dashboard->pageLimit);
 $group = ceil($currentPage / 5);
 $previousPage = $currentPage - 1;
 $nextPage = $currentPage + 1;

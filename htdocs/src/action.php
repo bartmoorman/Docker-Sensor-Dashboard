@@ -7,7 +7,7 @@ $log = array();
 $putEvent = true;
 
 switch ($_REQUEST['func']) {
-  case 'validatePinCode':
+  case 'authenticateSession':
     if (!empty($_REQUEST['pincode'])) {
       $output['success'] = $dashboard->authenticateSession($_REQUEST['pincode']);
       $log['pincode'] = $_REQUEST['pincode'];
@@ -60,38 +60,6 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'Unauthorized';
     }
     break;
-  case 'updateUser':
-    if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['user_id']) && !empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
-        $last_name = !empty($_REQUEST['last_name']) ? $_REQUEST['last_name'] : null;
-        $pushover_user = !empty($_REQUEST['pushover_user']) ? $_REQUEST['pushover_user'] : null;
-        $pushover_token = !empty($_REQUEST['pushover_token']) ? $_REQUEST['pushover_token'] : null;
-        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $_REQUEST['role']);
-        $log['user_id'] = $_REQUEST['user_id'];
-      } else {
-        $output['success'] = false;
-        $output['message'] = 'Missing arguments';
-      }
-    } else {
-      $output['success'] = false;
-      $output['message'] = 'Unauthorized';
-    }
-    break;
-  case 'modifyUser':
-    if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['action']) && !empty($_REQUEST['user_id'])) {
-        $output['success'] = $dashboard->modifyUser($_REQUEST['action'], $_REQUEST['user_id']);
-        $log['action'] = $_REQUEST['action'];
-        $log['user_id'] = $_REQUEST['user_id'];
-      } else {
-        $output['success'] = false;
-        $output['message'] = 'Missing arguments';
-      }
-    } else {
-      $output['success'] = false;
-      $output['message'] = 'Unauthorized';
-    }
-    break;
   case 'createSensor':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
       if (!empty($_REQUEST['name'])) {
@@ -103,6 +71,23 @@ switch ($_REQUEST['func']) {
       } else {
         $output['success'] = false;
         $output['message'] = 'No name supplied';
+      }
+    } else {
+      $output['success'] = false;
+      $output['message'] = 'Unauthorized';
+    }
+    break;
+  case 'updateUser':
+    if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
+      if (!empty($_REQUEST['user_id']) && !empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
+        $last_name = !empty($_REQUEST['last_name']) ? $_REQUEST['last_name'] : null;
+        $pushover_user = !empty($_REQUEST['pushover_user']) ? $_REQUEST['pushover_user'] : null;
+        $pushover_token = !empty($_REQUEST['pushover_token']) ? $_REQUEST['pushover_token'] : null;
+        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $_REQUEST['role']);
+        $log['user_id'] = $_REQUEST['user_id'];
+      } else {
+        $output['success'] = false;
+        $output['message'] = 'Missing arguments';
       }
     } else {
       $output['success'] = false;
@@ -127,12 +112,13 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'Unauthorized';
     }
     break;
-  case 'modifySensor':
+  case 'modifyObject':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['action']) && !empty($_REQUEST['sensor_id'])) {
-        $output['success'] = $dashboard->modifySensor($_REQUEST['action'], $_REQUEST['sensor_id']);
+      if (!empty($_REQUEST['action']) && !empty($_REQUEST['type']) && !empty($_REQUEST['value'])) {
+        $output['success'] = $dashboard->modifyObject($_REQUEST['action'], $_REQUEST['type'], $_REQUEST['value']);
         $log['action'] = $_REQUEST['action'];
-        $log['sensor_id'] = $_REQUEST['sensor_id'];
+        $log['type'] = $_REQUEST['type'];
+        $log['value'] = $_REQUEST['value'];
       } else {
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
@@ -142,10 +128,10 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'Unauthorized';
     }
     break;
-  case 'userDetails':
+  case 'getObjectDetails':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['user_id'])) {
-        if ($output['data'] = $dashboard->getUserDetails($_REQUEST['user_id'])) {
+      if (!empty($_REQUEST['type']) && !empty($_REQUEST['value'])) {
+        if ($output['data'] = $dashboard->getObjectDetails($_REQUEST['type'], $_REQUEST['value'])) {
           $output['success'] = true;
           $putEvent = false;
         } else {
@@ -154,26 +140,7 @@ switch ($_REQUEST['func']) {
         }
       } else {
         $output['success'] = false;
-        $output['message'] = 'No user id supplied';
-      }
-    } else {
-      $output['success'] = false;
-      $output['message'] = 'Unauthorized';
-    }
-    break;
-  case 'sensorDetails':
-    if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['sensor_id'])) {
-        if ($output['data'] = $dashboard->getSensorDetails($_REQUEST['sensor_id'])) {
-          $output['success'] = true;
-          $putEvent = false;
-        } else {
-          $output['success'] = false;
-          $log['sensor_id'] = $_REQUEST['sensor_id'];
-        }
-      } else {
-        $output['success'] = false;
-        $output['message'] = 'No sensor id supplied';
+        $output['message'] = 'Missing arguments';
       }
     } else {
       $output['success'] = false;
@@ -189,8 +156,8 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'Missing arguments';
     }
     break;
-  case 'getMinMax':
   case 'getReadings':
+  case 'getReadingsMinMax':
     if ($dashboard->isValidSession()) {
       if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['hours'])) {
         if ($output['data'] = $dashboard->{$_REQUEST['func']}($_REQUEST['sensor_id'], $_REQUEST['hours'])) {

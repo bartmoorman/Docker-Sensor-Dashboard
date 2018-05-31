@@ -31,9 +31,12 @@ class Dashboard {
   }
 
   private function connectDb() {
-    $this->dbConn = new SQLite3($this->dbFile);
-    $this->dbConn->busyTimeout(500);
-    $this->dbConn->exec('PRAGMA journal_mode = WAL');
+    if ($this->dbConn = new SQLite3($this->dbFile)) {
+      $this->dbConn->busyTimeout(500);
+      $this->dbConn->exec('PRAGMA journal_mode = WAL');
+      return true;
+    }
+    return false;
   }
 
   private function initDb() {
@@ -85,18 +88,14 @@ EOQ;
   }
 
   public function isConfigured() {
-    $query = <<<EOQ
-SELECT COUNT(*)
-FROM `users`;
-EOQ;
-    if ($this->dbConn->querySingle($query)) {
+    if ($this->getObjectCount('users')) {
       return true;
     }
     return false;
   }
 
   public function isValidSession() {
-    if (array_key_exists('authenticated', $_SESSION) && $this->isValidUser('user_id', $_SESSION['user_id'])) {
+    if (array_key_exists('authenticated', $_SESSION) && $this->isValidObject('user_id', $_SESSION['user_id'])) {
       return true;
     }
     return false;
@@ -108,7 +107,7 @@ EOQ;
 SELECT COUNT(*)
 FROM `users`
 WHERE `user_id` = '{$user_id}'
-AND `role` LIKE 'admin';
+AND `role` = 'admin';
 EOQ;
     if ($this->dbConn->querySingle($query)) {
       return true;
@@ -116,12 +115,22 @@ EOQ;
     return false;
   }
 
-  public function isValidUser($type, $value) {
+  public function isValidObject($type, $value) {
     $type = $this->dbConn->escapeString($type);
     $value = $this->dbConn->escapeString($value);
+    switch ($type) {
+      case 'pincode':
+      case 'user_id':
+        $table = 'users';
+        break;
+      case 'token':
+      case 'sensor_id':
+        $table = 'sensors';
+        break;
+    }
     $query = <<<EOQ
 SELECT COUNT(*)
-FROM `users`
+FROM `{$table}`
 WHERE `{$type}` = '{$value}'
 AND NOT `disabled`;
 EOQ;
@@ -132,7 +141,7 @@ EOQ;
   }
 
   public function authenticateSession($pincode) {
-    if ($this->isValidUser('pincode', $pincode)) {
+    if ($this->isValidObject('pincode', $pincode)) {
       $pincode = $this->dbConn->escapeString($pincode);
       $query = <<<EOQ
 SELECT `user_id`
@@ -194,6 +203,31 @@ EOQ;
     return false;
   }
 
+  public function createSensor($name, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
+    $token = bin2hex(random_bytes(8));
+    $query = <<<EOQ
+SELECT COUNT(*)
+FROM `sensors`
+WHERE `token` = '{$token}';
+EOQ;
+    if (!$this->dbConn->querySingle($query)) {
+      $name = $this->dbConn->escapeString($name);
+      $min_temperature = $this->dbConn->escapeString($min_temperature);
+      $max_temperature = $this->dbConn->escapeString($max_temperature);
+      $min_humidity = $this->dbConn->escapeString($min_humidity);
+      $max_humidity = $this->dbConn->escapeString($max_humidity);
+      $query = <<<EOQ
+INSERT
+INTO `sensors` (`name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`)
+VALUES ('{$name}', '{$token}', '{$min_temperature}', '{$max_temperature}', '{$min_humidity}', '{$max_humidity}');
+EOQ;
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public function updateUser($user_id, $pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
     $pincode = $this->dbConn->escapeString($pincode);
@@ -227,79 +261,6 @@ EOQ;
     return false;
   }
 
-  public function modifyUser($action, $user_id) {
-    $user_id = $this->dbConn->escapeString($user_id);
-    switch ($action) {
-      case 'enable':
-        $query = <<<EOQ
-UPDATE `users`
-SET `disabled` = '0'
-WHERE `user_id` = '{$user_id}';
-EOQ;
-        break;
-      case 'disable':
-        $query = <<<EOQ
-UPDATE `users`
-SET `disabled` = '1'
-WHERE `user_id` = '{$user_id}';
-EOQ;
-        break;
-      case 'delete':
-        $query = <<<EOQ
-DELETE
-FROM `users`
-WHERE `user_id` = '{$user_id}';
-DELETE
-FROM `events`
-WHERE `user_id` = '{$user_id}';
-EOQ;
-        break;
-    }
-    if ($this->dbConn->exec($query)) {
-      return true;
-    }
-    return false;
-  }
-
-  public function isValidToken($token) {
-    $token = $this->dbConn->escapeString($token);
-    $query = <<<EOQ
-SELECT COUNT(*)
-FROM `sensors`
-WHERE `token` LIKE '{$token}'
-AND NOT `disabled`;
-EOQ;
-    if ($this->dbConn->querySingle($query)) {
-      return true;
-    }
-    return false;
-  }
-
-  public function createSensor($name, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
-    $token = bin2hex(random_bytes(8));
-    $query = <<<EOQ
-SELECT COUNT(*)
-FROM `sensors`
-WHERE `token` LIKE '{$token}';
-EOQ;
-    if (!$this->dbConn->querySingle($query)) {
-      $name = $this->dbConn->escapeString($name);
-      $min_temperature = $this->dbConn->escapeString($min_temperature);
-      $max_temperature = $this->dbConn->escapeString($max_temperature);
-      $min_humidity = $this->dbConn->escapeString($min_humidity);
-      $max_humidity = $this->dbConn->escapeString($max_humidity);
-      $query = <<<EOQ
-INSERT
-INTO `sensors` (`name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`)
-VALUES ('{$name}', '{$token}', '{$min_temperature}', '{$max_temperature}', '{$min_humidity}', '{$max_humidity}');
-EOQ;
-      if ($this->dbConn->exec($query)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public function updateSensor($sensor_id, $name, $token, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $token = $this->dbConn->escapeString($token);
@@ -307,7 +268,7 @@ EOQ;
 SELECT COUNT(*)
 FROM `sensors`
 WHERE `sensor_id` != '{$sensor_id}'
-AND `token` LIKE '{$token}';
+AND `token` = '{$token}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
@@ -333,30 +294,54 @@ EOQ;
     return false;
   }
 
-  public function modifySensor($action, $sensor_id) {
-    $sensor_id = $this->dbConn->escapeString($sensor_id);
+  public function modifyObject($action, $type, $value, $extra_type = null, $extra_value = null) {
+    $type = $this->dbConn->escapeString($type);
+    $value = $this->dbConn->escapeString($value);
+    $extra_type = $this->dbConn->escapeString($extra_type);
+    $extra_value = $this->dbConn->escapeString($extra_value);
+    switch ($type) {
+      case 'pincode':
+      case 'user_id':
+        $table = 'users';
+        $extra_table = 'events';
+        break;
+      case 'token':
+      case 'sensor_id':
+        $table = 'sensors';
+        $extra_table = 'readings';
+        break;
+    }
     switch ($action) {
       case 'enable':
         $query = <<<EOQ
-UPDATE `sensors`
+UPDATE `{$table}`
 SET `disabled` = '0'
-WHERE `sensor_id` = '{$sensor_id}';
+WHERE `{$type}` = '{$value}';
 EOQ;
         break;
       case 'disable':
         $query = <<<EOQ
-UPDATE `sensors`
+UPDATE `{$table}`
 SET `disabled` = '1'
-WHERE `sensor_id` = '{$sensor_id}';
+WHERE `{$type}` = '{$value}';
 EOQ;
         break;
       case 'delete':
         $query = <<<EOQ
 DELETE
-FROM `sensors`
-WHERE `sensor_id` = '{$sensor_id}';
+FROM `{$table}`
+WHERE `{$type}` = '{$value}';
+DELETE
+FROM `{$extra_table}`
+WHERE `{$type}` = '{$value}';
 EOQ;
         break;
+      case 'notified':
+        $query = <<<EOQ
+UPDATE `{$table}`
+SET `{$action}_{$extra_type}` = '{$extra_value}'
+WHERE `{$type}` = '{$value}';
+EOQ;
     }
     if ($this->dbConn->exec($query)) {
       return true;
@@ -364,71 +349,111 @@ EOQ;
     return false;
   }
 
-  public function getUsers() {
-    $query = <<<EOQ
+  public function getObjects($type) {
+    switch ($type) {
+      case 'users':
+        $query = <<<EOQ
 SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
 FROM `users`
 ORDER BY `last_name`, `first_name`;
 EOQ;
-    if ($users = $this->dbConn->query($query)) {
-      $output = array();
-      while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
-        $output[] = $user;
-      }
-      return $output;
-    }
-    return false;
-  }
-
-  public function getUserDetails($user_id) {
-    $user_id = $this->dbConn->escapeString($user_id);
-    $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
-FROM `users`
-WHERE `user_id` = '{$user_id}';
-EOQ;
-    if ($user = $this->dbConn->querySingle($query, true)) {
-      return $user;
-    }
-    return false;
-  }
-
-  public function getSensors() {
-    $query = <<<EOQ
+        break;
+      case 'sensors':
+        $query = <<<EOQ
 SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
 FROM `sensors`
 ORDER BY `name`;
 EOQ;
-    if ($sensors = $this->dbConn->query($query)) {
+        break;
+    }
+    if ($objects = $this->dbConn->query($query)) {
       $output = array();
-      while ($sensor = $sensors->fetchArray(SQLITE3_ASSOC)) {
-        $output[] = $sensor;
+      while ($object = $objects->fetchArray(SQLITE3_ASSOC)) {
+        $output[] = $object;
       }
       return $output;
     }
     return false;
   }
 
-  public function getSensorDetails($sensor_id) {
-    $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $query = <<<EOQ
+  public function getObjectDetails($type, $value) {
+    $value = $this->dbConn->escapeString($value);
+    switch ($type) {
+      case 'user':
+        $query = <<<EOQ
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
+FROM `users`
+WHERE `user_id` = '{$value}';
+EOQ;
+        break;
+      case 'sensor':
+        $query = <<<EOQ
 SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`
 FROM `sensors`
-WHERE `sensor_id` = '{$sensor_id}';
+WHERE `sensor_id` = '{$value}';
 EOQ;
-    if ($sensor = $this->dbConn->querySingle($query, true)) {
-      return $sensor;
+        break;
+    }
+    if ($object = $this->dbConn->querySingle($query, true)) {
+      return $object;
+    }
+    return false;
+  }
+
+  public function getObjectCount($type) {
+    $type = $this->dbConn->escapeString($type);
+    $query = <<<EOQ
+SELECT COUNT(*)
+FROM `{$type}`;
+EOQ;
+    if ($count = $this->dbConn->querySingle($query)) {
+      return $count;
+    }
+    return false;
+  }
+
+  public function putEvent($action, $message = array()) {
+    $user_id = array_key_exists('authenticated', $_SESSION) ? $_SESSION['user_id'] : null;
+    $action = $this->dbConn->escapeString($action);
+    $message = $this->dbConn->escapeString(json_encode($message));
+    $remote_addr = ip2long(array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR']);
+    $query = <<<EOQ
+INSERT
+INTO `events` (`user_id`, `action`, `message`, `remote_addr`)
+VALUES ('{$user_id}', '{$action}', '{$message}', '{$remote_addr}');
+EOQ;
+    if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
+  }
+
+  public function getEvents($page = 1) {
+    $start = ($page - 1) * $this->pageLimit;
+    $query = <<<EOQ
+SELECT `event_id`, STRFTIME('%s', `date`, 'unixepoch', 'localtime') AS `date`, `user_id`, `first_name`, `last_name`, `action`, `message`, `remote_addr`, `disabled`
+FROM `events`
+LEFT JOIN `users` USING (`user_id`)
+ORDER BY `date` DESC
+LIMIT {$start}, {$this->pageLimit};
+EOQ;
+    if ($events = $this->dbConn->query($query)) {
+      $output = array();
+      while ($event = $events->fetchArray(SQLITE3_ASSOC)) {
+        $output[] = $event;
+      }
+      return $output;
     }
     return false;
   }
 
   public function putReading($token, $temperature, $humidity) {
     $token = $this->dbConn->escapeString($token);
-    if ($this->isValidToken($token)) {
+    if ($this->isValidObject('token', $token)) {
       $query = <<<EOQ
 SELECT `sensor_id`
 FROM `sensors`
-WHERE `token` LIKE '{$token}';
+WHERE `token` = '{$token}';
 EOQ;
       if ($sensor_id = $this->dbConn->querySingle($query)) {
         $temperature = $this->dbConn->escapeString($temperature);
@@ -449,25 +474,12 @@ EOQ;
   public function getReadings($sensor_id, $hours) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $hours = $this->dbConn->escapeString($hours);
-    switch (true) {
-      case $hours >= 24 * 365:
-        $granule = '%Y-%m';
-        break;
-      case $hours >= 24 * 30:
-        $granule = '%Y-%m-%d';
-        break;
-      case $hours >= 24:
-        $granule = '%Y-%m-%dT%H';
-        break;
-      default:
-        $granule = '%Y-%m-%dT%H:%M';
-    }
     $query = <<<EOQ
-SELECT STRFTIME('{$granule}', DATETIME(`date`, 'unixepoch'), 'localtime') AS `date`, ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
+SELECT STRFTIME('%Y-%m-%dT%H:%M', (`date` / ({$hours} * 60)) * ({$hours} * 60), 'unixepoch', 'localtime') AS `date`, ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
 FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
-AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'))
-GROUP BY STRFTIME('{$granule}', DATETIME(`date`, 'unixepoch'))
+AND `date` > STRFTIME('%s', 'now', '-{$hours} hours')
+GROUP BY DATETIME((`date` / ({$hours} * 60)) * ({$hours} * 60), 'unixepoch')
 ORDER BY `date`;
 EOQ;
     if ($readings = $this->dbConn->query($query)) {
@@ -481,14 +493,14 @@ EOQ;
     return false;
   }
 
-  public function getMinMax($sensor_id, $hours) {
+  public function getReadingsMinMax($sensor_id, $hours) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $hours = $this->dbConn->escapeString($hours);
     $query = <<<EOQ
 SELECT ROUND(MIN(`temperature`), 1) AS `min_temperature`, ROUND(MAX(`temperature`), 1) AS `max_temperature`, ROUND(MIN(`humidity`), 1) AS `min_humidity`, ROUND(MAX(`humidity`), 1) AS `max_humidity`
 FROM `readings`
 WHERE `sensor_id` = '${sensor_id}'
-AND `date` > STRFTIME('%s', DATETIME('now', '-{$hours} hours'));
+AND `date` > STRFTIME('%s', 'now', '-{$hours} hours');
 EOQ;
     if ($reading = $this->dbConn->querySingle($query, true)) {
       $output = array(
@@ -506,17 +518,17 @@ EOQ;
     return false;
   }
 
-  public function putSensorNotification($sensor_id, $type, $value) {
+  public function getReadingsAverage($sensor_id, $minutes) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $type = $this->dbConn->escapeString($type);
-    $value = $this->dbConn->escapeString($value);
+    $minutes = $this->dbConn->escapeString($minutes);
     $query = <<<EOQ
-UPDATE `sensors`
-SET `{$type}` = '{$value}'
+SELECT ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
+FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
+AND `date` > STRFTIME('%s', 'now', '-{$minutes} minutes');
 EOQ;
-    if ($this->dbConn->exec($query)) {
-      return true;
+    if ($reading = $this->dbConn->querySingle($query, true)) {
+      return $reading;
     }
     return false;
   }
@@ -538,84 +550,30 @@ EOQ;
     return false;
   }
 
-  public function sendNotification($message) {
+  public function sendNotifications($messages) {
     $query = <<<EOQ
-SELECT `pushover_user`, `pushover_token`
+SELECT `user_id`, `first_name`, `last_name`, `pushover_user`, `pushover_token`
 FROM `users`
 WHERE LENGTH(`pushover_user`) AND LENGTH(`pushover_token`)
-AND NOT `disabled`
+AND NOT `disabled`;
 EOQ;
     if ($users = $this->dbConn->query($query)) {
       $ch = curl_init('https://api.pushover.net/1/messages.json');
       while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, array('user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch);
+        $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
+        foreach ($messages as $message) {
+          curl_setopt($ch, CURLOPT_POSTFIELDS, array('user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message));
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+          if (curl_exec($ch) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
+            $status = 'successful';
+          } else {
+            $status = 'failed';
+          }
+          echo date('Y-m-d H:i:s') . " - notification to {$user_name} (user_id: {$user['user_id']}) {$status}: {$message}" . PHP_EOL;
+        }
       }
       curl_close($ch);
       return true;
-    }
-    return false;
-  }
-
-  public function getAverage($sensor_id, $minutes) {
-    $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $minutes = $this->dbConn->escapeString($minutes);
-    $query = <<<EOQ
-SELECT ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
-FROM `readings`
-WHERE `sensor_id` = '{$sensor_id}'
-AND `date` > STRFTIME('%s', DATETIME('now', '-{$minutes} minutes'));
-EOQ;
-    if ($reading = $this->dbConn->querySingle($query, true)) {
-      return $reading;
-    }
-    return false;
-  }
-
-  public function putEvent($action, $message = array()) {
-    $user_id = array_key_exists('authenticated', $_SESSION) ? $_SESSION['user_id'] : null;
-    $action = $this->dbConn->escapeString($action);
-    $message = $this->dbConn->escapeString(json_encode($message));
-    $remote_addr = ip2long(array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR']);
-    $query = <<<EOQ
-INSERT
-INTO `events` (`user_id`, `action`, `message`, `remote_addr`)
-VALUES ('{$user_id}', '{$action}', '{$message}', '{$remote_addr}');
-EOQ;
-    if ($this->dbConn->exec($query)) {
-      return true;
-    }
-    return false;
-  }
-
-  public function getCount($type) {
-    $type = $this->dbConn->escapeString($type);
-    $query = <<<EOQ
-SELECT COUNT(*)
-FROM `{$type}`;
-EOQ;
-    if ($count = $this->dbConn->querySingle($query)) {
-      return $count;
-    }
-    return false;
-  }
-
-  public function getEvents($page = 1) {
-    $start = ($page - 1) * $this->pageLimit;
-    $query = <<<EOQ
-SELECT `event_id`, STRFTIME('%s', DATETIME(`date`, 'unixepoch', 'localtime')) AS `date`, `user_id`, `first_name`, `last_name`, `action`, `message`, `remote_addr`, `disabled`
-FROM `events`
-LEFT JOIN `users` USING (`user_id`)
-ORDER BY `date` DESC
-LIMIT {$start}, {$this->pageLimit};
-EOQ;
-    if ($events = $this->dbConn->query($query)) {
-      $output = array();
-      while ($event = $events->fetchArray(SQLITE3_ASSOC)) {
-        $output[] = $event;
-      }
-      return $output;
     }
     return false;
   }

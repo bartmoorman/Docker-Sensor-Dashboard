@@ -79,14 +79,14 @@ for ($i=0; $i<6; $i++) {
           if (pincode.length == 6) {
             $('button.id-number').prop('disabled', true);
             $('button.id-clear').prop('disabled', true);
-            $.getJSON('src/action.php', {"func": "validatePinCode", "pincode": pincode})
+            $.getJSON('src/action.php', {"func": "authenticateSession", "pincode": pincode})
               .done(function(data) {
                 if (data.success) {
                   location.href = '<?php echo dirname($_SERVER['PHP_SELF']) ?>';
                 }
               })
               .fail(function(jqxhr, textStatus, errorThrown) {
-                console.log(`validatePinCode failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+                console.log(`authenticateSession failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
               })
               .always(function() {
                 clearTimeout(timer);

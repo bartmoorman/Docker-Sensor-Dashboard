@@ -34,8 +34,8 @@ $dashboard = new Dashboard(true, true, true, false);
         </thead>
         <tbody>
 <?php
-foreach ($dashboard->getSensors() as $sensor) {
-  $tableClass = $sensor['disabled'] ? 'text-danger' : 'table-default';
+foreach ($dashboard->getObjects('sensors') as $sensor) {
+  $tableClass = $sensor['disabled'] ? 'text-warning' : 'table-default';
   echo "          <tr class='{$tableClass}'>" . PHP_EOL;
   if ($sensor['disabled']) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-sensor_id='{$sensor['sensor_id']}'>Enable</button></td>" . PHP_EOL;
@@ -109,7 +109,7 @@ foreach ($dashboard->getSensors() as $sensor) {
           $('input.id-token').removeClass('d-none').prop('required', true);
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
-          $.getJSON('src/action.php', {"func": "sensorDetails", "sensor_id": $(this).data('sensor_id')})
+          $.getJSON('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
             .done(function(data) {
               if (data.success) {
                 sensor = data.data;
@@ -125,20 +125,20 @@ foreach ($dashboard->getSensors() as $sensor) {
               }
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`sensorDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+              console.log(`getObjectDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
             });
         });
 
        $('button.id-modify').click(function() {
           if (confirm(`Want to ${$(this).data('action').toUpperCase()} sensor ${$(this).data('sensor_id')}?`)) {
-            $.getJSON('src/action.php', {"func": "modifySensor", "action": $(this).data('action'), "sensor_id": $(this).data('sensor_id')})
+            $.getJSON('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "sensor_id", "value": $(this).data('sensor_id')})
               .done(function(data) {
                 if (data.success) {
                   location.reload();
                 }
               })
               .fail(function(jqxhr, textStatus, errorThrown) {
-                console.log(`removeUser failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+                console.log(`modifySensor failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
               });
           }
         });

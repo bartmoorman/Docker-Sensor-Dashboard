@@ -4,38 +4,34 @@ require_once('/var/www/html/inc/dashboard.class.php');
 $dashboard = new Dashboard(false, false, false, false);
 
 while (true) {
+  $messages = array();
   foreach ($dashboard->getSensorNotifications() as $sensor) {
-    if ($reading = $dashboard->getAverage($sensor['sensor_id'], 5)) {
+    if ($reading = $dashboard->getReadingsAverage($sensor['sensor_id'], 5)) {
       foreach (array('temperature', 'humidity') as $element) {
-        if ($sensor['min_' . $element] && $reading[$element] < $sensor['min_' . $element] && !$sensor['notified_min_' . $element]) {
-          $message = sprintf('%s too low (%.1f < %.1f) for %s' . PHP_EOL, ucfirst($element), $reading[$element], $sensor['min_' . $element], $sensor['name']);
-          if ($dashboard->sendNotification($message)) {
-            echo date('Y-m-d\TH:i:s') . " - notification sent - {$message}" . PHP_EOL;
-            $dashboard->putSensorNotification($sensor['sensor_id'], 'notified_min_' . $element, true);
-          }
-        } elseif ($sensor['min_' . $element] && $reading[$element] > $sensor['min_' . $element] && $sensor['notified_min_' . $element]) {
-          $message = sprintf('%s in range (%.1f > %.1f) for %s' . PHP_EOL, ucfirst($element), $reading[$element], $sensor['min_' . $element], $sensor['name']);
-          if ($dashboard->sendNotification($message)) {
-            echo date('Y-m-d\TH:i:s') . " - notification sent - {$message}" . PHP_EOL;
-            $dashboard->putSensorNotification($sensor['sensor_id'], 'notified_min_' . $element, false);
+        if (strlen($sensor['min_' . $element])) {
+          if ($reading[$element] < $sensor['min_' . $element] && !$sensor['notified_min_' . $element]) {
+            $messages[] = sprintf('%s (sensor_id: %u) %s is too low (%.1f < %.1f)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $sensor['min_' . $element]);
+            $dashboard->modifyObject('notified', 'sensor_id', $sensor['sensor_id'], 'min_' . $element, true);
+          } elseif ($reading[$element] > $sensor['min_' . $element] && $sensor['notified_min_' . $element]) {
+            $messages[] = sprintf('%s (sensor_id: %u) %s is within range (%.1f > %.1f)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $sensor['min_' . $element]);
+            $dashboard->modifyObject('notified', 'sensor_id', $sensor['sensor_id'], 'min_' . $element, false);
           }
         }
 
-        if ($sensor['max_' . $element] && $reading[$element] > $sensor['max_' . $element] && !$sensor['notified_max_' . $element]) {
-          $message = sprintf('%s too high (%.1f > %.1f) for %s' . PHP_EOL, ucfirst($element), $reading[$element], $sensor['max_' . $element], $sensor['name']);
-          if ($dashboard->sendNotification($message)) {
-            echo date('Y-m-d\TH:i:s') . " - notification sent - {$message}" . PHP_EOL;
-            $dashboard->putSensorNotification($sensor['sensor_id'], 'notified_max_' . $element, true);
-          }
-        } elseif ($sensor['max_' . $element] && $reading[$element] < $sensor['max_' . $element] && $sensor['notified_max_' . $element]) {
-          $message = sprintf('%s in range (%.1f < %.1f) for %s' . PHP_EOL, ucfirst($element), $reading[$element], $sensor['max_' . $element], $sensor['name']);
-          if ($dashboard->sendNotification($message)) {
-            echo date('Y-m-d\TH:i:s') . " - notification sent - {$message}" . PHP_EOL;
-            $dashboard->putSensorNotification($sensor['sensor_id'], 'notified_max_' . $element, false);
+        if (strlen($sensor['max_' . $element])) {
+          if ($reading[$element] > $sensor['max_' . $element] && !$sensor['notified_max_' . $element]) {
+            $message[] = sprintf('%s (sensor_id: %u) %s is too high (%.1f > %.1f)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $sensor['max_' . $element]);
+            $dashboard->modifyObject('notified', 'sensor_id', $sensor['sensor_id'], 'max_' . $element, true);
+          } elseif ($reading[$element] < $sensor['max_' . $element] && $sensor['notified_max_' . $element]) {
+            $message[] = sprintf('%s (sensor_id: %u) %s is within range (%.1f < %.1f)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $sensor['max_' . $element]);
+            $dashboard->modifyObject('notified', 'sensor_id', $sensor['sensor_id'], 'max_' . $element, false);
           }
         }
       }
     }
+  }
+  if ($messages) {
+    $dashboard->sendNotifications($messages);
   }
   sleep(60);
 }
