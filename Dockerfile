@@ -1,6 +1,7 @@
 FROM bmoorman/ubuntu:latest
 
-ENV HTTPD_SERVERNAME="localhost"
+ENV HTTPD_SERVERNAME="localhost" \
+    TEMPERATURE_SCALE="Fahrenheit"
 
 ARG DEBIAN_FRONTEND="noninteractive"
 

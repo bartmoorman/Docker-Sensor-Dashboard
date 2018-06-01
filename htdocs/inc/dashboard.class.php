@@ -3,6 +3,8 @@ class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn = null;
   public $pageLimit = 20;
+  public $temperatureScale = 'celsius';
+  public $temperatureKey = '&deg;C';
 
   public function __construct($requireConfigured = true, $requireValidSession = true, $requireAdmin = true, $requireIndex = false) {
     session_start();
@@ -27,6 +29,19 @@ class Dashboard {
     } elseif ($requireConfigured) {
       header('Location: setup.php');
       exit;
+    }
+
+    switch (strtolower(getenv('TEMPERATURE_SCALE'))) {
+      case 'f':
+      case 'fahrenheit':
+        $this->temperatureScale = 'fahrenheit';
+        $this->temperatureKey = '&deg;F';
+        break;
+      case 'k':
+      case 'kelvin':
+        $this->temperatureScale = 'kelvin';
+        $this->temperatureKey = 'K';
+        break;
     }
   }
 
@@ -445,6 +460,18 @@ EOQ;
       return $output;
     }
     return false;
+  }
+
+  public function convertTemperature($temperature) {
+    switch ($this->temperatureScale) {
+      case 'fahrenheit':
+        $temperature = $temperature * 9 / 5 + 32;
+        break;
+      case 'kelvin':
+        $temperature = $temperature + 273.15;
+        break;
+    }
+    return $temperature;
   }
 
   public function putReading($token, $temperature, $humidity) {

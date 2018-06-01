@@ -21,4 +21,7 @@ $(which apache2ctl) \
     -D ${HTTPD_SECURITY:-HTTPD_SSL} \
     -D ${HTTPD_REDIRECT:-HTTPD_REDIRECT_SSL}
 
-exec $(which notifications.php)
+exec su \
+    -c $(which notifications.php) \
+    -s /bin/bash \
+    www-data
