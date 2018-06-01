@@ -105,7 +105,7 @@ for ($i=0; $i<6; $i++) {
         }
 
         $(document).keyup(function(event) {
-          switch (event.key) {
+          switch (true) {
             case /^[1]$/.test(event.key):
               addNumberToPin(1);
               break;

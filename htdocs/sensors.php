@@ -54,12 +54,6 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
         </tbody>
       </table>
     </div>
-    <nav>
-      <ul class='pagination justify-content-center'>
-<?php
-?>
-      </ul>
-    </nav>
     <div class='modal fade id-modal'>
       <div class='modal-dialog'>
         <div class='modal-content'>
@@ -72,10 +66,10 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 <div class='col-auto'>
                   <input class='form-control' id='name' type='text' name='name' placeholder='Sensor Name' required>
                   <input class='form-control id-token' id='token' type='text' name='token' placeholder='Access Token' minlength='16' maxlength='16' pattern='[a-z0-9]{16}' required>
-                  <input class='form-control' id='min_temperature' type='number' name='min_temperature' placeholder='Min Temperature (&deg;C)' min='-40' max='80' step='0.1'>
-                  <input class='form-control' id='max_temperature' type='number' name='max_temperature' placeholder='Max Temperature (&deg;C)' min='-40' max='80' step='0.1'>
-                  <input class='form-control' id='min_humidity' type='number' name='min_humidity' placeholder='Min Humidity (&percnt;)' min='0' max='100' step='0.1'>
-                  <input class='form-control' id='max_humidity' type='number' name='max_humidity' placeholder='Max Humidity (&percnt;)' min='0' max='100' step='0.1'>
+                  <input class='form-control' id='min_temperature' type='number' name='min_temperature' placeholder='Min Temperature (<?php echo $dashboard->temperature['key'] ?>)' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.1'>
+                  <input class='form-control' id='max_temperature' type='number' name='max_temperature' placeholder='Max Temperature (<?php echo $dashboard->temperature['key'] ?>)' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.1'>
+                  <input class='form-control' id='min_humidity' type='number' name='min_humidity' placeholder='Min Humidity (%)' min='0' max='100' step='0.1'>
+                  <input class='form-control' id='max_humidity' type='number' name='max_humidity' placeholder='Max Humidity (%)' min='0' max='100' step='0.1'>
                 </div>
               </div>
             </div>

@@ -91,12 +91,12 @@ foreach ($periods as $hours => $period) {
                 display: true,
                 id: 'temperature',
                 position: 'left',
-                scaleLabel: {display: true, labelString: 'Temperature'}
+                scaleLabel: {display: true, labelString: 'Temperature (<?php echo $dashboard->temperature['key'] ?>)'}
               }, {
                 display: true,
                 id: 'humidity',
                 position: 'right',
-                scaleLabel: {display: true, labelString: 'Humidity'},
+                scaleLabel: {display: true, labelString: 'Humidity (%)'},
                 gridLines: {display: false}
               }]
             }
@@ -117,7 +117,7 @@ foreach ($periods as $hours => $period) {
             });
         }
 
-        function updateChart() {
+        function getReadings() {
           $.getJSON('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
@@ -132,7 +132,7 @@ foreach ($periods as $hours => $period) {
               chart.update();
             });
 
-          timer = setTimeout(updateChart, 60 * 1000);
+          timer = setTimeout(getReadings, 30 * 1000);
         };
 
         $.getJSON('src/action.php', {"func": "getSessionDetails"})
@@ -148,7 +148,7 @@ foreach ($periods as $hours => $period) {
           .always(function() {
             if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
               getReadingsMinMax();
-              updateChart();
+              getReadings();
             }
           });
 
@@ -156,7 +156,7 @@ foreach ($periods as $hours => $period) {
           clearTimeout(timer);
           if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
             getReadingsMinMax();
-            updateChart();
+            getReadings();
           }
           $.getJSON('src/action.php', {"func": "putSessionDetail", "key": $(this).data('key'), "value": $(this).val()})
             .fail(function(jqxhr, textStatus, errorThrown) {

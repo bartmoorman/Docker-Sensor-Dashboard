@@ -1,10 +1,9 @@
 <?php
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
-  private $dbConn = null;
+  private $dbConn;
   public $pageLimit = 20;
-  public $temperatureScale = 'celsius';
-  public $temperatureKey = '&deg;C';
+  public $temperature = array('scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null);
 
   public function __construct($requireConfigured = true, $requireValidSession = true, $requireAdmin = true, $requireIndex = false) {
     session_start();
@@ -34,14 +33,26 @@ class Dashboard {
     switch (strtolower(getenv('TEMPERATURE_SCALE'))) {
       case 'f':
       case 'fahrenheit':
-        $this->temperatureScale = 'fahrenheit';
-        $this->temperatureKey = '&deg;F';
+        $this->temperature['scale'] = 'fahrenheit';
+        $this->temperature['key'] = '°F';
+        $this->temperature['min'] = -40;
+        $this->temperature['max'] = 176;
+        $this->temperature['buffer'] = 2.16;
         break;
       case 'k':
       case 'kelvin':
-        $this->temperatureScale = 'kelvin';
-        $this->temperatureKey = 'K';
+        $this->temperature['scale'] = 'kelvin';
+        $this->temperature['key'] = 'K';
+        $this->temperature['min'] = 233.15;
+        $this->temperature['max'] = 353.15;
+        $this->temperature['buffer'] = 1.2;
         break;
+      default:
+        $this->temperature['scale'] = 'celsius';
+        $this->temperature['key'] = '°C';
+        $this->temperature['min'] = -40;
+        $this->temperature['max'] = 80;
+        $this->temperature['buffer'] = 1.2;
     }
   }
 
@@ -463,7 +474,7 @@ EOQ;
   }
 
   public function convertTemperature($temperature) {
-    switch ($this->temperatureScale) {
+    switch ($this->temperature['scale']) {
       case 'fahrenheit':
         $temperature = $temperature * 9 / 5 + 32;
         break;
@@ -512,6 +523,7 @@ EOQ;
     if ($readings = $this->dbConn->query($query)) {
       $output = array('temperatureData' => array(), 'humidityData' => array());
       while ($reading = $readings->fetchArray(SQLITE3_ASSOC)) {
+        $reading['temperature'] = $this->convertTemperature($reading['temperature']);
         $output['temperatureData'][] = array('x' => $reading['date'], 'y' => $reading['temperature']);
         $output['humidityData'][] = array('x' => $reading['date'], 'y' => $reading['humidity']);
       }
@@ -530,14 +542,16 @@ WHERE `sensor_id` = '${sensor_id}'
 AND `date` > STRFTIME('%s', 'now', '-{$hours} hours');
 EOQ;
     if ($reading = $this->dbConn->querySingle($query, true)) {
+      $reading['min_temperature'] = $this->convertTemperature($reading['min_temperature']);
+      $reading['max_temperature'] = $this->convertTemperature($reading['max_temperature']);
       $output = array(
         'temperature' => array(
-          'suggestedMin' => $reading['min_temperature'] < -38.8 ? $reading['min_temperature'] : $reading['min_temperature'] - 1.2,
-          'suggestedMax' => $reading['max_temperature'] > 78.8 ? $reading['max_temperature'] : $reading['max_temperature'] + 1.2
+          'suggestedMin' => $reading['min_temperature'] < $this->temperature['min'] + $this->temperature['buffer'] ? $this->temperature['min'] : $reading['min_temperature'] - $this->temperature['buffer'],
+          'suggestedMax' => $reading['max_temperature'] > $this->temperature['max'] - $this->temperature['buffer'] ? $this->temperature['max'] : $reading['max_temperature'] + $this->temperature['buffer']
         ),
         'humidity' => array(
-          'suggestedMin' => $reading['min_humidity'] < 1 ? $reading['min_humidity'] : $reading['min_humidity'] - 1,
-          'suggestedMax' => $reading['max_humidity'] > 99 ? $reading['max_humidity'] : $reading['max_humidity'] + 1
+          'suggestedMin' => $reading['min_humidity'] < 1 ? 0 : $reading['min_humidity'] - 1,
+          'suggestedMax' => $reading['max_humidity'] > 99 ? 100 : $reading['max_humidity'] + 1
         )
       );
       return $output;
@@ -555,6 +569,7 @@ WHERE `sensor_id` = '{$sensor_id}'
 AND `date` > STRFTIME('%s', 'now', '-{$minutes} minutes');
 EOQ;
     if ($reading = $this->dbConn->querySingle($query, true)) {
+      $reading['temperature'] = $this->convertTemperature($reading['temperature']);
       return $reading;
     }
     return false;
