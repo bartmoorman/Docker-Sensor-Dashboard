@@ -1,6 +1,10 @@
 #!/bin/bash
 chown www-data: /config
 
+if [ ! -d /config/sessions ]; then
+    install -o www-data -g www-data -d /config/sessions
+fi
+
 if [ ! -d /config/httpd/ssl ]; then
     mkdir --parents /config/httpd/ssl
     ln --symbolic --force /etc/ssl/certs/ssl-cert-snakeoil.pem /config/httpd/ssl/dashboard.crt

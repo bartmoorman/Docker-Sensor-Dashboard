@@ -153,8 +153,8 @@ foreach ($periods as $hours => $period) {
           });
 
         $('select.id-sensor-id, select.id-hours').change(function() {
-          clearTimeout(timer);
           if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
+            clearTimeout(timer);
             getReadingsMinMax();
             getReadings();
           }
