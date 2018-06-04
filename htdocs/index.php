@@ -39,10 +39,12 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 <?php
 $periods = array(
   1 => '1 hour',
+  3 => '3 hours',
   6 => '6 hours',
   12 => '12 hours',
   24 => '24 hours',
   24 * 7 => '7 days',
+  24 * 14 => '14 days',
   24 * 30 => '30 days',
   24 * 90 => '90 days',
   24 * 180 => '180 days',

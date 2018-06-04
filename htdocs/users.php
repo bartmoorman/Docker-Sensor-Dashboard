@@ -24,10 +24,9 @@ $dashboard = new Dashboard(true, true, true, false);
         <thead>
           <tr>
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
-            <th>Pin Code</th>
+            <th>User ID</th>
             <th>User Name</th>
-            <th>Pushover User</th>
-            <th>Pushover Token</th>
+            <th>Pushover Notifications</th>
             <th>Role</th>
           </tr>
         </thead>
@@ -40,12 +39,15 @@ foreach ($dashboard->getObjects('users') as $user) {
   if ($user['disabled']) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-user_id='{$user['user_id']}'>Enable</button></td>" . PHP_EOL;
   } else {
-    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-edit' data-user_id='{$user['user_id']}'>Edit</button></td>" . PHP_EOL;
+    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-user_id='{$user['user_id']}'>Details</button></td>" . PHP_EOL;
   }
-  echo "            <td>{$user['pincode']}</td>" . PHP_EOL;
+  echo "            <td>{$user['user_id']}</td>" . PHP_EOL;
   echo "            <td>{$user_name}</td>" . PHP_EOL;
-  echo "            <td>{$user['pushover_user']}</td>" . PHP_EOL;
-  echo "            <td>{$user['pushover_token']}</td>" . PHP_EOL;
+  if (!empty($user['pushover_user']) && !empty($user['pushover_token'])) {
+    echo "            <td><input type='checkbox' checked disabled></td>" . PHP_EOL;
+  } else {
+    echo "            <td><input type='checkbox' disabled></td>" . PHP_EOL;
+  }
   echo "            <td>{$user['role']}</td>" . PHP_EOL;
   echo "          </tr>" . PHP_EOL;
 }
@@ -61,18 +63,37 @@ foreach ($dashboard->getObjects('users') as $user) {
               <h5 class='modal-title'></h5>
             </div>
             <div class='modal-body'>
-              <div class='form-row justify-content-center'>
-                <div class='col-auto'>
-                  <input class='form-control' id='pincode' type='tel' name='pincode' placeholder='Numeric Pin Code' minlegth='6' maxlength='6' pattern='[0-9]{6}' required>
-                  <input class='form-control' id='first_name' type='text' name='first_name' placeholder='First Name' required>
-                  <input class='form-control' id='last_name' type='text' name='last_name' placeholder='Last Name (optional)'>
-                  <input class='form-control' id='pushover_user' type='text' name='pushover_user' placeholder='Pushover User (optional)' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
-                  <input class='form-control' id='pushover_token' type='text' name='pushover_token' placeholder='Pushover Token (optional)' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>Numeric Pin Code</label>
+                  <input class='form-control' id='pincode' type='tel' name='pincode' minlegth='6' maxlength='6' pattern='[0-9]{6}' required>
+                </div>
+                <div class='form-group col'>
+                  <label>Role</label>
                   <select class='form-control' id='role' name='role' required>
-                    <option disabled>Role</option>
                     <option value='user'>user</option>
                     <option value='admin'>admin</option>
                   </select>
+                </div>
+              </div>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>First Name</label>
+                  <input class='form-control' id='first_name' type='text' name='first_name' required>
+                </div>
+                <div class='form-group col'>
+                  <label>Last Name (optional)</label>
+                  <input class='form-control' id='last_name' type='text' name='last_name'>
+                </div>
+              </div>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>Pushover User (optional)</label>
+                  <input class='form-control' id='pushover_user' type='text' name='pushover_user' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
+                </div>
+                <div class='form-group col'>
+                  <label>Pushover Token (optional)</label>
+                  <input class='form-control' id='pushover_token' type='text' name='pushover_token' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
                 </div>
               </div>
             </div>
@@ -99,8 +120,8 @@ foreach ($dashboard->getObjects('users') as $user) {
           $('div.id-modal').modal('toggle');
         });
 
-        $('button.id-edit').click(function() {
-          $('h5.modal-title').text('Edit User');
+        $('button.id-details').click(function() {
+          $('h5.modal-title').text('User Details');
           $('form').removeData('user_id').data('func', 'updateUser').trigger('reset');
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');

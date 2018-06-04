@@ -1,4 +1,5 @@
 <?php
+ini_set('date.timezone', 'UTC');
 ini_set('session.save_path', '/config/sessions');
 ini_set('session.gc_maxlifetime', 24 * 60 * 60);
 ini_set('session.use_strict_mode', true);
@@ -483,7 +484,7 @@ EOQ;
   public function convertTemperature($temperature) {
     switch ($this->temperature['scale']) {
       case 'fahrenheit':
-        $temperature = $temperature * 9 / 5 + 32;
+        $temperature = round($temperature * 9 / 5 + 32, 2);
         break;
       case 'kelvin':
         $temperature = $temperature + 273.15;
@@ -520,7 +521,7 @@ EOQ;
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $hours = $this->dbConn->escapeString($hours);
     $query = <<<EOQ
-SELECT STRFTIME('%Y-%m-%dT%H:%M', (`date` / ({$hours} * 60)) * ({$hours} * 60), 'unixepoch', 'localtime') AS `date`, ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
+SELECT STRFTIME('%Y-%m-%dT%H:%M', (`date` / ({$hours} * 60)) * ({$hours} * 60), 'unixepoch', 'localtime') AS `date`, ROUND(AVG(`temperature`), 2) AS `temperature`, ROUND(AVG(`humidity`), 2) AS `humidity`
 FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
 AND `date` > STRFTIME('%s', 'now', '-{$hours} hours')
@@ -543,7 +544,7 @@ EOQ;
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $hours = $this->dbConn->escapeString($hours);
     $query = <<<EOQ
-SELECT ROUND(MIN(`temperature`), 1) AS `min_temperature`, ROUND(MAX(`temperature`), 1) AS `max_temperature`, ROUND(MIN(`humidity`), 1) AS `min_humidity`, ROUND(MAX(`humidity`), 1) AS `max_humidity`
+SELECT ROUND(MIN(`temperature`), 2) AS `min_temperature`, ROUND(MAX(`temperature`), 2) AS `max_temperature`, ROUND(MIN(`humidity`), 2) AS `min_humidity`, ROUND(MAX(`humidity`), 2) AS `max_humidity`
 FROM `readings`
 WHERE `sensor_id` = '${sensor_id}'
 AND `date` > STRFTIME('%s', 'now', '-{$hours} hours');
@@ -570,7 +571,7 @@ EOQ;
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $minutes = $this->dbConn->escapeString($minutes);
     $query = <<<EOQ
-SELECT ROUND(AVG(`temperature`), 1) AS `temperature`, ROUND(AVG(`humidity`), 1) AS `humidity`
+SELECT ROUND(AVG(`temperature`), 2) AS `temperature`, ROUND(AVG(`humidity`), 2) AS `humidity`
 FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
 AND `date` > STRFTIME('%s', 'now', '-{$minutes} minutes');
@@ -606,7 +607,7 @@ FROM `users`
 WHERE LENGTH(`pushover_user`) AND LENGTH(`pushover_token`)
 AND NOT `disabled`;
 EOQ;
-    if ($users = $this->dbConn->query($query)) {
+    if ($messages && $users = $this->dbConn->query($query)) {
       $ch = curl_init('https://api.pushover.net/1/messages.json');
       while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
         $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];

@@ -1,4 +1,4 @@
-FROM bmoorman/ubuntu:latest
+FROM bmoorman/ubuntu:xenial
 
 ENV HTTPD_SERVERNAME="localhost" \
     TEMPERATURE_SCALE="Fahrenheit"

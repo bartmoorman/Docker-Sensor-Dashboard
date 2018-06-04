@@ -24,12 +24,12 @@ $dashboard = new Dashboard(true, true, true, false);
         <thead>
           <tr>
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
-            <th>Name</th>
-            <th>Token</th>
-            <th>Min Temp.</th>
-            <th>Max Temp.</th>
-            <th>Min Hum.</th>
-            <th>Max Hum.</th>
+            <th>Sensor ID</th>
+            <th>Sensor Name</th>
+            <th>Min. Temp. (<?php echo $dashboard->temperature['key'] ?>)</th>
+            <th>Max. Temp. (<?php echo $dashboard->temperature['key'] ?>)</th>
+            <th>Min. Hum. (%)</th>
+            <th>Max. Hum. (%)</th>
           </tr>
         </thead>
         <tbody>
@@ -40,10 +40,10 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
   if ($sensor['disabled']) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-sensor_id='{$sensor['sensor_id']}'>Enable</button></td>" . PHP_EOL;
   } else {
-    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-edit' data-sensor_id='{$sensor['sensor_id']}'>Edit</button></td>" . PHP_EOL;
+    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-sensor_id='{$sensor['sensor_id']}'>Details</button></td>" . PHP_EOL;
   }
+  echo "            <td>{$sensor['sensor_id']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['name']}</td>" . PHP_EOL;
-  echo "            <td>{$sensor['token']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['min_temperature']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['max_temperature']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['min_humidity']}</td>" . PHP_EOL;
@@ -62,15 +62,51 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
               <h5 class='modal-title'></h5>
             </div>
             <div class='modal-body'>
-              <div class='form-row justify-content-center'>
-                <div class='col-auto'>
-                  <input class='form-control' id='name' type='text' name='name' placeholder='Sensor Name' required>
-                  <input class='form-control id-token' id='token' type='text' name='token' placeholder='Access Token' minlength='16' maxlength='16' pattern='[a-z0-9]{16}' required>
-                  <input class='form-control' id='min_temperature' type='number' name='min_temperature' placeholder='Min Temperature (<?php echo $dashboard->temperature['key'] ?>)' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.1'>
-                  <input class='form-control' id='max_temperature' type='number' name='max_temperature' placeholder='Max Temperature (<?php echo $dashboard->temperature['key'] ?>)' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.1'>
-                  <input class='form-control' id='min_humidity' type='number' name='min_humidity' placeholder='Min Humidity (%)' min='0' max='100' step='0.1'>
-                  <input class='form-control' id='max_humidity' type='number' name='max_humidity' placeholder='Max Humidity (%)' min='0' max='100' step='0.1'>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>Sensor Name</label>
+                  <input class='form-control' id='name' type='text' name='name' required>
                 </div>
+                <div class='form-group col'>
+                  <label>Access Token</label>
+                  <input class='form-control id-token' id='token' type='text' name='token' minlength='16' maxlength='16' pattern='[a-z0-9]{16}' required>
+                </div>
+              </div>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>Min. Temp. (<?php echo $dashboard->temperature['key'] ?>) (optional)</label>
+                  <input class='form-control' id='min_temperature' type='number' name='min_temperature' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.01'>
+                </div>
+                <div class='form-group col'>
+                  <label>Max. Temp. (<?php echo $dashboard->temperature['key'] ?>) (optional)</label>
+                  <input class='form-control' id='max_temperature' type='number' name='max_temperature' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.01'>
+                </div>
+              </div>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>Min. Hum. (%) (optional)</label>
+                  <input class='form-control' id='min_humidity' type='number' name='min_humidity' min='0' max='100' step='0.1'>
+                </div>
+                <div class='form-group col'>
+                  <label>Max. Hum. (%) (optional)</label>
+                  <input class='form-control' id='max_humidity' type='number' name='max_humidity' min='0' max='100' step='0.1'>
+                </div>
+              </div>
+              <div class='form-check'>
+                <input class='form-check-input' type='checkbox' disabled>
+                <label class='form-check-label'>Notified Min. Temperature</label>
+              </div>
+              <div class='form-check'>
+                <input class='form-check-input' type='checkbox' disabled>
+                <label class='form-check-label'>Notified Max. Temperature</label>
+              </div>
+              <div class='form-check'>
+                <input class='form-check-input' type='checkbox' disabled>
+                <label class='form-check-label'>Notified Min. Humidity</label>
+              </div>
+              <div class='form-check'>
+                <input class='form-check-input' type='checkbox' disabled>
+                <label class='form-check-label'>Notified Max. Humidity</label>
               </div>
             </div>
             <div class='modal-footer'>
@@ -91,16 +127,16 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
         $('button.id-add').click(function() {
           $('h5.modal-title').text('Add Sensor');
           $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
-          $('input.id-token').addClass('d-none').prop('required', false);
+          $('input.id-token').prop('required', false).prop('disabled', true).val('will be generated');
           $('button.id-modify.id-volatile').addClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
         });
 
-        $('button.id-edit').click(function() {
-          $('h5.modal-title').text('Edit Sensor');
+        $('button.id-details').click(function() {
+          $('h5.modal-title').text('Sensor Details');
           $('form').removeData('sensor_id').data('func', 'updateSensor').trigger('reset');
-          $('input.id-token').removeClass('d-none').prop('required', true);
+          $('input.id-token').prop('disabled', false).prop('required', true);
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
           $.getJSON('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})

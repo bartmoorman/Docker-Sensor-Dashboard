@@ -30,9 +30,7 @@ while (true) {
       }
     }
   }
-  if ($messages) {
-    $dashboard->sendNotifications($messages);
-  }
+  $dashboard->sendNotifications($messages);
   sleep(60);
 }
 ?>
