@@ -394,7 +394,7 @@ EOQ;
         break;
       case 'sensors':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
+SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `disabled`
 FROM `sensors`
 ORDER BY `name`;
 EOQ;
@@ -422,7 +422,7 @@ EOQ;
         break;
       case 'sensor':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`
+SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `disabled`
 FROM `sensors`
 WHERE `sensor_id` = '{$value}';
 EOQ;

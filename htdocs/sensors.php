@@ -92,20 +92,20 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                   <input class='form-control' id='max_humidity' type='number' name='max_humidity' min='0' max='100' step='0.1'>
                 </div>
               </div>
-              <div class='form-check'>
-                <input class='form-check-input' type='checkbox' disabled>
+              <div class='form-check id-notified'>
+                <input class='form-check-input' id='notified_min_temperature' type='checkbox' disabled>
                 <label class='form-check-label'>Notified Min. Temperature</label>
               </div>
-              <div class='form-check'>
-                <input class='form-check-input' type='checkbox' disabled>
+              <div class='form-check id-notified'>
+                <input class='form-check-input' id='notified_max_temperature' type='checkbox' disabled>
                 <label class='form-check-label'>Notified Max. Temperature</label>
               </div>
-              <div class='form-check'>
-                <input class='form-check-input' type='checkbox' disabled>
+              <div class='form-check id-notified'>
+                <input class='form-check-input' id='notified_min_humidity' type='checkbox' disabled>
                 <label class='form-check-label'>Notified Min. Humidity</label>
               </div>
-              <div class='form-check'>
-                <input class='form-check-input' type='checkbox' disabled>
+              <div class='form-check id-notified'>
+                <input class='form-check-input' id='notified_max_humidity' type='checkbox' disabled>
                 <label class='form-check-label'>Notified Max. Humidity</label>
               </div>
             </div>
@@ -128,6 +128,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('h5.modal-title').text('Add Sensor');
           $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
           $('input.id-token').prop('required', false).prop('disabled', true).val('will be generated');
+          $('div.id-notified').addClass('d-none');
           $('button.id-modify.id-volatile').addClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
@@ -137,6 +138,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('h5.modal-title').text('Sensor Details');
           $('form').removeData('sensor_id').data('func', 'updateSensor').trigger('reset');
           $('input.id-token').prop('disabled', false).prop('required', true);
+          $('div.id-notified').removeClass('d-none');
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
           $.getJSON('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
@@ -150,6 +152,10 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 $('#max_temperature').val(sensor.max_temperature);
                 $('#min_humidity').val(sensor.min_humidity);
                 $('#max_humidity').val(sensor.max_humidity);
+                $('#notified_min_temperature').prop('checked', sensor.notified_min_temperature);
+                $('#notified_max_temperature').prop('checked', sensor.notified_max_temperature);
+                $('#notified_min_humidity').prop('checked', sensor.notified_min_humidity);
+                $('#notified_max_humidity').prop('checked', sensor.notified_max_humidity);
                 $('button.id-modify.id-volatile').data('sensor_id', sensor.sensor_id);
                 $('div.id-modal').modal('toggle');
               }
