@@ -198,20 +198,6 @@ EOQ;
     return false;
   }
 
-  public function putSessionDetail($key, $value) {
-    if ($_SESSION[$key] = $value) {
-      return true;
-    }
-    return false;
-  }
-
-  public function getSessionDetails() {
-    if (!empty($_SESSION)) {
-      return $_SESSION;
-    }
-    return false;
-  }
-
   public function createUser($pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $role) {
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ

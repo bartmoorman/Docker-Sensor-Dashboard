@@ -17,33 +17,6 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'No pincode supplied';
     }
     break;
-  case 'putSessionDetail':
-    if ($dashboard->isValidSession()) {
-      if (!empty($_REQUEST['key']) && !empty($_REQUEST['value'])) {
-        $output['success'] = $dashboard->putSessionDetail($_REQUEST['key'], $_REQUEST['value']);
-        $putEvent = false;
-      } else {
-        $output['success'] = false;
-        $output['message'] = 'Missing arguments';
-      }
-    } else {
-      $output['success'] = false;
-      $output['message'] = 'Unauthorized';
-    }
-    break;
-  case 'getSessionDetails':
-    if ($dashboard->isValidSession()) {
-      if ($output['data'] = $dashboard->getSessionDetails()) {
-        $output['success'] = true;
-        $putEvent = false;
-      } else {
-        $output['success'] = false;
-      }
-    } else {
-      $output['success'] = false;
-      $output['message'] = 'Unauthorized';
-    }
-    break;
   case 'createUser':
     if (!$dashboard->isConfigured() || ($dashboard->isValidSession() && $dashboard->isAdmin())) {
       if (!empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {

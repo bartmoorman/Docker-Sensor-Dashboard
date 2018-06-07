@@ -26,7 +26,7 @@ if ($dashboard->isAdmin()) {
 ?>
     <canvas id='chart'></canvas>
     <nav class='navbar text-center'>
-      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor-id' data-key='sensor_id'>
+      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor-id' data-key='sensor-id'>
         <option value='0'>Sensor</option>
 <?php
 foreach ($dashboard->getObjects('sensors') as $sensor) {
@@ -63,7 +63,9 @@ foreach ($periods as $hours => $period) {
     <script src='//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js' integrity='sha384-0saKbDOWtYAw5aP4czPUm6ByY5JojfQ9Co6wDgkuM7Zn+anp+4Rj92oGK8cbV91S' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
+        var cookies = ['sensor-id', 'hours'];
         var timer;
+        var chart;
         var config = {
           type: 'line',
           data: {
@@ -104,7 +106,6 @@ foreach ($periods as $hours => $period) {
             }
           }
         };
-        var chart = new Chart($('#chart'), config);
 
         function getReadingsMinMax() {
           $.getJSON('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
@@ -116,6 +117,10 @@ foreach ($periods as $hours => $period) {
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
               console.log(`getReadingsMinMax failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+            })
+            .always(function() {
+              chart = new Chart($('#chart'), config);
+              getReadings();
             });
         }
 
@@ -125,45 +130,36 @@ foreach ($periods as $hours => $period) {
               if (data.success) {
                 config.data.datasets[0].data = data.data.temperatureData;
                 config.data.datasets[1].data = data.data.humidityData;
+                chart.update();
               }
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
               console.log(`getReadings failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
             })
             .always(function() {
-              chart.update();
+              timer = setTimeout(getReadings, 30 * 1000);
             });
-
-          timer = setTimeout(getReadings, 30 * 1000);
         };
 
-        $.getJSON('src/action.php', {"func": "getSessionDetails"})
-          .done(function(data) {
-            if (data.success) {
-              $('select.id-sensor-id').val(data.data.sensor_id && data.data.sensor_id || 0);
-              $('select.id-hours').val(data.data.hours && data.data.hours || 0);
-            }
-          })
-          .fail(function(jqxhr, textStatus, errorThrown) {
-            console.log(`getSessionDetails failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
-          })
-          .always(function() {
-            if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
-              getReadingsMinMax();
-              getReadings();
-            }
-          });
+        $.each(document.cookie.split(';'), function() {
+          var [key, value] = $.trim(this).split('=');
+          if (cookies.includes(key)) {
+            $(`select.id-${key}`).val(value);
+          }
+        });
+
+        if ($('select.id-sensor-id').val() && $('select.id-hours').val()) {
+          getReadingsMinMax();
+        } else {
+          chart = new Chart($('#chart'), config);
+        }
 
         $('select.id-sensor-id, select.id-hours').change(function() {
-          if ($('select.id-sensor-id').val() != 0 && $('select.id-hours').val() != 0) {
-            clearTimeout(timer);
+          clearTimeout(timer);
+          if ($('select.id-sensor-id').val() && $('select.id-hours').val()) {
             getReadingsMinMax();
-            getReadings();
           }
-          $.getJSON('src/action.php', {"func": "putSessionDetail", "key": $(this).data('key'), "value": $(this).val()})
-            .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`putSessionDetailo failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
-            });
+          document.cookie = `${$(this).data('key')}=${$(this).val()}`;
         });
 
         $('button.id-nav').click(function() {
