@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `last_name` TEXT,
   `pushover_user` TEXT,
   `pushover_token` TEXT,
+  `pushover_sound` TEXT,
   `role` TEXT NOT NULL,
   `disabled` INTEGER NOT NULL DEFAULT 0
 );
@@ -198,7 +199,7 @@ EOQ;
     return false;
   }
 
-  public function createUser($pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $role) {
+  public function createUser($pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
 SELECT COUNT(*)
@@ -210,11 +211,12 @@ EOQ;
       $last_name = $this->dbConn->escapeString($last_name);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
       $pushover_token = $this->dbConn->escapeString($pushover_token);
+      $pushover_sound = $this->dbConn->escapeString($pushover_sound);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 INSERT
-INTO `users` (`pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`)
-VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$role}');
+INTO `users` (`pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`)
+VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$pushover_sound}', '{$role}');
 EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
@@ -248,7 +250,7 @@ EOQ;
     return false;
   }
 
-  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $role) {
+  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
     $pincode = $this->dbConn->escapeString($pincode);
     $query = <<<EOQ
@@ -262,6 +264,7 @@ EOQ;
       $last_name = $this->dbConn->escapeString($last_name);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
       $pushover_token = $this->dbConn->escapeString($pushover_token);
+      $pushover_sound = $this->dbConn->escapeString($pushover_sound);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 UPDATE `users`
@@ -271,6 +274,7 @@ SET
   `last_name` = '{$last_name}',
   `pushover_user` = '{$pushover_user}',
   `pushover_token` = '{$pushover_token}',
+  `pushover_sound` = '{$pushover_sound}',
   `role` = '{$role}'
 WHERE `user_id` = '{$user_id}';
 EOQ;
@@ -373,7 +377,7 @@ EOQ;
     switch ($type) {
       case 'users':
         $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
 FROM `users`
 ORDER BY `last_name`, `first_name`;
 EOQ;
@@ -401,7 +405,7 @@ EOQ;
     switch ($type) {
       case 'user':
         $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `role`, `disabled`
+SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
 FROM `users`
 WHERE `user_id` = '{$value}';
 EOQ;
@@ -588,7 +592,7 @@ EOQ;
 
   public function sendNotifications($messages) {
     $query = <<<EOQ
-SELECT `user_id`, `first_name`, `last_name`, `pushover_user`, `pushover_token`
+SELECT `user_id`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`
 FROM `users`
 WHERE LENGTH(`pushover_user`) AND LENGTH(`pushover_token`)
 AND NOT `disabled`;
@@ -598,7 +602,7 @@ EOQ;
       while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
         $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
         foreach ($messages as $message) {
-          curl_setopt($ch, CURLOPT_POSTFIELDS, array('user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message));
+          curl_setopt($ch, CURLOPT_POSTFIELDS, array('user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message, 'sound' => $user['pushover_sound']));
           curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
           if (curl_exec($ch) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
             $status = 'successful';

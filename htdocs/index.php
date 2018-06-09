@@ -26,7 +26,7 @@ if ($dashboard->isAdmin()) {
 ?>
     <canvas id='chart'></canvas>
     <nav class='navbar text-center'>
-      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor-id' data-key='sensor-id'>
+      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor_id' data-key='sensor_id'>
         <option value='0'>Sensor</option>
 <?php
 foreach ($dashboard->getObjects('sensors') as $sensor) {
@@ -63,7 +63,7 @@ foreach ($periods as $hours => $period) {
     <script src='//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js' integrity='sha384-0saKbDOWtYAw5aP4czPUm6ByY5JojfQ9Co6wDgkuM7Zn+anp+4Rj92oGK8cbV91S' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
-        var cookies = ['sensor-id', 'hours'];
+        var cookies = ['sensor_id', 'hours'];
         var timer;
         var chart;
         var config = {
@@ -108,7 +108,7 @@ foreach ($periods as $hours => $period) {
         };
 
         function getReadingsMinMax() {
-          $.getJSON('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
+          $.getJSON('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
                 config.options.scales.yAxes[0].ticks = data.data.temperature;
@@ -125,7 +125,7 @@ foreach ($periods as $hours => $period) {
         }
 
         function getReadings() {
-          $.getJSON('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor-id').val(), "hours": $('select.id-hours').val()})
+          $.getJSON('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
                 config.data.datasets[0].data = data.data.temperatureData;
@@ -148,15 +148,15 @@ foreach ($periods as $hours => $period) {
           }
         });
 
-        if ($('select.id-sensor-id').val() && $('select.id-hours').val()) {
+        if ($('select.id-sensor_id').val() != 0 && $('select.id-hours').val() != 0) {
           getReadingsMinMax();
         } else {
           chart = new Chart($('#chart'), config);
         }
 
-        $('select.id-sensor-id, select.id-hours').change(function() {
+        $('select.id-sensor_id, select.id-hours').change(function() {
           clearTimeout(timer);
-          if ($('select.id-sensor-id').val() && $('select.id-hours').val()) {
+          if ($('select.id-sensor_id').val() != 0 && $('select.id-hours').val() != 0) {
             getReadingsMinMax();
           }
           document.cookie = `${$(this).data('key')}=${$(this).val()}`;
