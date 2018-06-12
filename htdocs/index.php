@@ -108,7 +108,7 @@ foreach ($periods as $hours => $period) {
         };
 
         function getReadingsMinMax() {
-          $.getJSON('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
+          $.get('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
                 config.options.scales.yAxes[0].ticks = data.data.temperature;
@@ -125,7 +125,7 @@ foreach ($periods as $hours => $period) {
         }
 
         function getReadings() {
-          $.getJSON('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
+          $.get('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
                 config.data.datasets[0].data = data.data.temperatureData;

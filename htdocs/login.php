@@ -54,7 +54,7 @@ for ($i=0; $i<6; $i++) {
               <div class='col-auto m-2 p-0'><button class='btn btn-outline-info rounded-circle id-number' data-number='9'><h2 class='my-auto'>9</h2><h5>wxyz</h5></button></div>
             </div>
             <div class='row justify-content-center'>
-              <div class='col-auto m-2 p-0'><button class='btn btn-outline-secondary rounded-circle id-number' disabled></button></div>
+              <div class='col-auto m-2 p-0'><button class='btn btn-outline-secondary rounded-circle border-0 id-number' disabled></button></div>
               <div class='col-auto m-2 p-0'><button class='btn btn-outline-info rounded-circle id-number' data-number='0'><h2 class='my-auto'>0</h2><h5>&nbsp;</h5></button></div>
               <div class='col-auto m-2 p-0'><button class='btn btn-outline-danger rounded-circle id-clear'><h5 class='my-auto'>clear</h5></button></div>
             </div>
@@ -84,7 +84,7 @@ for ($i=0; $i<6; $i++) {
           if (pincode.length == 6) {
             $('button.id-number').prop('disabled', true);
             $('button.id-clear').prop('disabled', true);
-            $.getJSON('src/action.php', {"func": "authenticateSession", "pincode": pincode})
+            $.post('src/action.php', {"func": "authenticateSession", "pincode": pincode})
               .done(function(data) {
                 if (data.success) {
                   location.href = '<?php echo dirname($_SERVER['PHP_SELF']) ?>';

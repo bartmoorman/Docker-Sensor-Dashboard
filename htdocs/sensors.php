@@ -64,31 +64,31 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
             <div class='modal-body'>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Sensor Name</label>
+                  <label>Sensor Name <sup class='text-danger'>*</sup></label>
                   <input class='form-control' id='name' type='text' name='name' required>
                 </div>
                 <div class='form-group col'>
-                  <label>Access Token</label>
+                  <label>Access Token <sup class='text-danger id-required'>*</sup></label>
                   <input class='form-control id-token' id='token' type='text' name='token' minlength='16' maxlength='16' pattern='[a-z0-9]{16}' required>
                 </div>
               </div>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Min. Temp. (<?php echo $dashboard->temperature['key'] ?>) (optional)</label>
+                  <label>Min. Temp. (<?php echo $dashboard->temperature['key'] ?>)</label>
                   <input class='form-control' id='min_temperature' type='number' name='min_temperature' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.01'>
                 </div>
                 <div class='form-group col'>
-                  <label>Max. Temp. (<?php echo $dashboard->temperature['key'] ?>) (optional)</label>
+                  <label>Max. Temp. (<?php echo $dashboard->temperature['key'] ?>)</label>
                   <input class='form-control' id='max_temperature' type='number' name='max_temperature' min='<?php echo $dashboard->temperature['min'] ?>' max='<?php echo $dashboard->temperature['max'] ?>' step='0.01'>
                 </div>
               </div>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Min. Hum. (%) (optional)</label>
+                  <label>Min. Hum. (%)</label>
                   <input class='form-control' id='min_humidity' type='number' name='min_humidity' min='0' max='100' step='0.1'>
                 </div>
                 <div class='form-group col'>
-                  <label>Max. Hum. (%) (optional)</label>
+                  <label>Max. Hum. (%)</label>
                   <input class='form-control' id='max_humidity' type='number' name='max_humidity' min='0' max='100' step='0.1'>
                 </div>
               </div>
@@ -127,6 +127,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
         $('button.id-add').click(function() {
           $('h5.modal-title').text('Add Sensor');
           $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
+          $('sup.id-required').addClass('d-none');
           $('input.id-token').prop('required', false).prop('disabled', true).val('will be generated');
           $('div.id-notified').addClass('d-none');
           $('button.id-modify.id-volatile').addClass('d-none').removeData('sensor_id');
@@ -137,11 +138,12 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
         $('button.id-details').click(function() {
           $('h5.modal-title').text('Sensor Details');
           $('form').removeData('sensor_id').data('func', 'updateSensor').trigger('reset');
+          $('sup.id-required').removeClass('d-none');
           $('input.id-token').prop('disabled', false).prop('required', true);
           $('div.id-notified').removeClass('d-none');
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
-          $.getJSON('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
+          $.get('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
             .done(function(data) {
               if (data.success) {
                 sensor = data.data;
@@ -167,7 +169,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 
        $('button.id-modify').click(function() {
           if (confirm(`Want to ${$(this).data('action').toUpperCase()} sensor ${$(this).data('sensor_id')}?`)) {
-            $.getJSON('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "sensor_id", "value": $(this).data('sensor_id')})
+            $.get('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "sensor_id", "value": $(this).data('sensor_id')})
               .done(function(data) {
                 if (data.success) {
                   location.reload();
@@ -181,7 +183,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.getJSON('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "token": $('#token').val(), "min_temperature": $('#min_temperature').val(), "max_temperature": $('#max_temperature').val(), "min_humidity": $('#min_humidity').val(), "max_humidity": $('#max_humidity').val()})
+          $.post('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "token": $('#token').val(), "min_temperature": $('#min_temperature').val(), "max_temperature": $('#max_temperature').val(), "min_humidity": $('#min_humidity').val(), "max_humidity": $('#max_humidity').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();

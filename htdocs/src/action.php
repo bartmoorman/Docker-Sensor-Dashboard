@@ -157,5 +157,6 @@ if ($putEvent) {
   $dashboard->putEvent($_REQUEST['func'], array_merge(array_intersect_key($output, $logFields), $log));
 }
 
+header('Content-Type: application/json');
 echo json_encode($output);
 ?>
