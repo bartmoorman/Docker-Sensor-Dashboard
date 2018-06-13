@@ -37,11 +37,7 @@ $dashboard = new Dashboard(true, true, true, false);
 foreach ($dashboard->getObjects('sensors') as $sensor) {
   $tableClass = $sensor['disabled'] ? 'text-warning' : 'table-default';
   echo "          <tr class='{$tableClass}'>" . PHP_EOL;
-  if ($sensor['disabled']) {
-    echo "            <td><button type='button' class='btn btn-sm btn-outline-warning id-modify' data-action='enable' data-sensor_id='{$sensor['sensor_id']}'>Enable</button></td>" . PHP_EOL;
-  } else {
-    echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-sensor_id='{$sensor['sensor_id']}'>Details</button></td>" . PHP_EOL;
-  }
+  echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-sensor_id='{$sensor['sensor_id']}'>Details</button></td>" . PHP_EOL;
   echo "            <td>{$sensor['sensor_id']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['name']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['min_temperature']}</td>" . PHP_EOL;
@@ -110,8 +106,8 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
               </div>
             </div>
             <div class='modal-footer'>
-              <button type='button' class='btn btn-outline-warning id-modify id-volatile' data-action='disable'>Disable</button>
-              <button type='button' class='btn btn-outline-danger mr-auto id-modify id-volatile' data-action='delete'>Delete</button>
+              <button type='button' class='btn btn-outline-warning id-modify id-volatile'></button>
+              <button type='button' class='btn btn-outline-danger mr-auto id-modify' data-action='delete'>Delete</button>
               <button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>
               <button type='submit' class='btn id-submit'></button>
             </div>
@@ -130,7 +126,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('sup.id-required').addClass('d-none');
           $('input.id-token').prop('required', false).prop('disabled', true).val('will be generated');
           $('div.id-notified').addClass('d-none');
-          $('button.id-modify.id-volatile').addClass('d-none').removeData('sensor_id');
+          $('button.id-modify').addClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
         });
@@ -141,7 +137,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('sup.id-required').removeClass('d-none');
           $('input.id-token').prop('disabled', false).prop('required', true);
           $('div.id-notified').removeClass('d-none');
-          $('button.id-modify.id-volatile').removeClass('d-none').removeData('sensor_id');
+          $('button.id-modify').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
           $.get('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
             .done(function(data) {
@@ -158,7 +154,8 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 $('#notified_max_temperature').prop('checked', sensor.notified_max_temperature);
                 $('#notified_min_humidity').prop('checked', sensor.notified_min_humidity);
                 $('#notified_max_humidity').prop('checked', sensor.notified_max_humidity);
-                $('button.id-modify.id-volatile').data('sensor_id', sensor.sensor_id);
+                $('button.id-modify.id-volatile').data('action', sensor.disabled ? 'enable' : 'disable').text(sensor.disabled ? 'Enable' : 'Disable');
+                $('button.id-modify').data('sensor_id', sensor.sensor_id);
                 $('div.id-modal').modal('toggle');
               }
             })
