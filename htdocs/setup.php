@@ -23,8 +23,12 @@ $dashboard = new Dashboard(false, true, false, true);
             <div class='modal-body'>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Numeric Pin Code <sup class='text-danger'>*</sup></label>
-                  <input class='form-control' id='pincode' type='tel' name='pincode' minlength='6' maxlength='6' pattern='[0-9]{6}' autofocus required>
+                  <label>Username <sup class='text-danger'>*</sup></label>
+                  <input class='form-control' id='username' type='text' name='username' pattern='[A-Za-z0-9]+' autofocus required>
+                </div>
+                <div class='form-group col'>
+                  <label>Password <sup class='text-danger'>*</sup></label>
+                  <input class='form-control' id='password' type='password' name='password' minlength='6' required>
                 </div>
               </div>
               <div class='form-row'>
@@ -58,7 +62,7 @@ $dashboard = new Dashboard(false, true, false, true);
       $(document).ready(function() {
         $('form').submit(function(e) {
           e.preventDefault();
-          $.post('src/action.php', {"func": "createUser", "pincode": $('#pincode').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "role": $('#role').val()})
+          $.post('src/action.php', {"func": "createUser", "username": $('#username').val(), "password": $('#password').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "role": $('#role').val()})
             .done(function(data) {
               if (data.success) {
                 location.href = '<?php echo dirname($_SERVER['PHP_SELF']) ?>';

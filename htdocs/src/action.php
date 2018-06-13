@@ -8,23 +8,23 @@ $putEvent = true;
 
 switch ($_REQUEST['func']) {
   case 'authenticateSession':
-    if (!empty($_REQUEST['pincode'])) {
-      $output['success'] = $dashboard->authenticateSession($_REQUEST['pincode']);
-      $log['pincode'] = $_REQUEST['pincode'];
+    if (!empty($_REQUEST['username']) && !empty($_REQUEST['password'])) {
+      $output['success'] = $dashboard->authenticateSession($_REQUEST['username'], $_REQUEST['password']);
+      $log['username'] = $_REQUEST['username'];
       usleep(rand(1000000, 1250000));
     } else {
       $output['success'] = false;
-      $output['message'] = 'No pincode supplied';
+      $output['message'] = 'Missing arguments';
     }
     break;
   case 'createUser':
     if (!$dashboard->isConfigured() || ($dashboard->isValidSession() && $dashboard->isAdmin())) {
-      if (!empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
+      if (!empty($_REQUEST['username']) && !empty($_REQUEST['password']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
         $last_name = !empty($_REQUEST['last_name']) ? $_REQUEST['last_name'] : null;
         $pushover_user = !empty($_REQUEST['pushover_user']) ? $_REQUEST['pushover_user'] : null;
         $pushover_token = !empty($_REQUEST['pushover_token']) ? $_REQUEST['pushover_token'] : null;
         $pushover_sound = !empty($_REQUEST['pushover_sound']) ? $_REQUEST['pushover_sound'] : null;
-        $output['success'] = $dashboard->createUser($_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_sound, $_REQUEST['role']);
+        $output['success'] = $dashboard->createUser($_REQUEST['username'], $_REQUEST['password'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_sound, $_REQUEST['role']);
       } else {
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
@@ -53,12 +53,13 @@ switch ($_REQUEST['func']) {
     break;
   case 'updateUser':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['user_id']) && !empty($_REQUEST['pincode']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
+      if (!empty($_REQUEST['user_id']) && !empty($_REQUEST['username']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
+        $password = !empty($_REQUEST['password']) ? $_REQUEST['password'] : null;
         $last_name = !empty($_REQUEST['last_name']) ? $_REQUEST['last_name'] : null;
         $pushover_user = !empty($_REQUEST['pushover_user']) ? $_REQUEST['pushover_user'] : null;
         $pushover_token = !empty($_REQUEST['pushover_token']) ? $_REQUEST['pushover_token'] : null;
         $pushover_sound = !empty($_REQUEST['pushover_sound']) ? $_REQUEST['pushover_sound'] : null;
-        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['pincode'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_sound, $_REQUEST['role']);
+        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['username'], $password, $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_sound, $_REQUEST['role']);
         $log['user_id'] = $_REQUEST['user_id'];
       } else {
         $output['success'] = false;

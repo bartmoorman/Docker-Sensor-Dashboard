@@ -25,6 +25,7 @@ $dashboard = new Dashboard(true, true, true, false);
           <tr>
             <th><button type='button' class='btn btn-sm btn-outline-success id-add'>Add</button></th>
             <th>User ID</th>
+            <th>Username</th>
             <th>User Name</th>
             <th>Pushover Notifications</th>
             <th>Role</th>
@@ -42,6 +43,7 @@ foreach ($dashboard->getObjects('users') as $user) {
     echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-user_id='{$user['user_id']}'>Details</button></td>" . PHP_EOL;
   }
   echo "            <td>{$user['user_id']}</td>" . PHP_EOL;
+  echo "            <td>{$user['username']}</td>" . PHP_EOL;
   echo "            <td>{$user_name}</td>" . PHP_EOL;
   if (!empty($user['pushover_user']) && !empty($user['pushover_token'])) {
     echo "            <td><input type='checkbox' checked disabled></td>" . PHP_EOL;
@@ -65,8 +67,12 @@ foreach ($dashboard->getObjects('users') as $user) {
             <div class='modal-body'>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Numeric Pin Code <sup class='text-danger'>*</sup></label>
-                  <input class='form-control' id='pincode' type='tel' name='pincode' minlegth='6' maxlength='6' pattern='[0-9]{6}' required>
+                  <label>Username <sup class='text-danger'>*</sup></label>
+                  <input class='form-control' id='username' type='text' name='username' pattern='[A-za-z0-9]+' required>
+                </div>
+                <div class='form-group col'>
+                  <label>Password <sup class='text-danger id-required'>*</sup></label>
+                  <input class='form-control id-password' id='password' type='password' name='password' minlength='6' required>
                 </div>
               </div>
               <div class='form-row'>
@@ -90,11 +96,11 @@ foreach ($dashboard->getObjects('users') as $user) {
               </div>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Pushover User</label>
+                  <label>Pushover User Key</label>
                   <input class='form-control' id='pushover_user' type='text' name='pushover_user' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
                 </div>
                 <div class='form-group col'>
-                  <label>Pushover Token</label>
+                  <label>Pushover App. Token</label>
                   <input class='form-control' id='pushover_token' type='text' name='pushover_token' minlegth='30' maxlength='30' pattern='[A-Za-z0-9]{30}'>
                 </div>
               </div>
@@ -127,7 +133,6 @@ foreach ($sounds as $value => $text) {
 }
 ?>
                   </select>
-                  <small class='form-text'><a href='https://pushover.net/api#sounds' target='_blank'>Listen</a></small>
                 </div>
               </div>
             </div>
@@ -149,6 +154,8 @@ foreach ($sounds as $value => $text) {
         $('button.id-add').click(function() {
           $('h5.modal-title').text('Add User');
           $('form').removeData('user_id').data('func', 'createUser').trigger('reset');
+          $('sup.id-required').removeClass('d-none');
+          $('input.id-password').prop('required', true);
           $('button.id-modify.id-volatile').addClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
@@ -157,6 +164,8 @@ foreach ($sounds as $value => $text) {
         $('button.id-details').click(function() {
           $('h5.modal-title').text('User Details');
           $('form').removeData('user_id').data('func', 'updateUser').trigger('reset');
+          $('sup.id-required').addClass('d-none');
+          $('input.id-password').prop('required', false);
           $('button.id-modify.id-volatile').removeClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
           $.get('src/action.php', {"func": "getObjectDetails", "type": "user", "value": $(this).data('user_id')})
@@ -164,7 +173,7 @@ foreach ($sounds as $value => $text) {
               if (data.success) {
                 user = data.data;
                 $('form').data('user_id', user.user_id);
-                $('#pincode').val(user.pincode);
+                $('#username').val(user.username);
                 $('#first_name').val(user.first_name);
                 $('#last_name').val(user.last_name);
                 $('#pushover_user').val(user.pushover_user);
@@ -196,7 +205,7 @@ foreach ($sounds as $value => $text) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.post('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "pincode": $('#pincode').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "pushover_sound": $('#pushover_sound').val(), "role": $('#role').val()})
+          $.post('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "username": $('#username').val(), "password": $('#password').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "pushover_sound": $('#pushover_sound').val(), "role": $('#role').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();

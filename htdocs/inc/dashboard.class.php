@@ -77,7 +77,8 @@ class Dashboard {
     $query = <<<EOQ
 CREATE TABLE IF NOT EXISTS `users` (
   `user_id` INTEGER PRIMARY KEY AUTOINCREMENT,
-  `pincode` INTEGER NOT NULL UNIQUE,
+  `username` TEXT NOT NULL UNIQUE,
+  `password` TEXT NOT NULL,
   `first_name` TEXT NOT NULL,
   `last_name` TEXT,
   `pushover_user` TEXT,
@@ -150,11 +151,24 @@ EOQ;
     return false;
   }
 
+  public function isValidCredentials($username, $password) {
+    $username = $this->dbConn->escapeString($username);
+    $query = <<<EOQ
+SELECT `password`
+FROM `users`
+WHERE `username` = '{$username}'
+EOQ;
+    if (password_verify($password, $this->dbConn->querySingle($query))) {
+      return true;
+    }
+    return false;
+  }
+
   public function isValidObject($type, $value) {
     $type = $this->dbConn->escapeString($type);
     $value = $this->dbConn->escapeString($value);
     switch ($type) {
-      case 'pincode':
+      case 'username':
       case 'user_id':
         $table = 'users';
         break;
@@ -175,13 +189,13 @@ EOQ;
     return false;
   }
 
-  public function authenticateSession($pincode) {
-    if ($this->isValidObject('pincode', $pincode)) {
-      $pincode = $this->dbConn->escapeString($pincode);
+  public function authenticateSession($username, $password) {
+    if ($this->isValidCredentials($username, $password)) {
+      $username = $this->dbConn->escapeString($username);
       $query = <<<EOQ
 SELECT `user_id`
 FROM `users`
-WHERE `pincode` = '{$pincode}';
+WHERE `username` = '{$username}';
 EOQ;
       if ($user_id = $this->dbConn->querySingle($query)) {
         $_SESSION['authenticated'] = true;
@@ -199,14 +213,15 @@ EOQ;
     return false;
   }
 
-  public function createUser($pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
-    $pincode = $this->dbConn->escapeString($pincode);
+  public function createUser($username, $password, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
+    $username = $this->dbConn->escapeString($username);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `users`
-WHERE `pincode` = '{$pincode}';
+WHERE `username` = '{$username}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
+      $password = password_hash($password, PASSWORD_DEFAULT);
       $first_name = $this->dbConn->escapeString($first_name);
       $last_name = $this->dbConn->escapeString($last_name);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
@@ -215,8 +230,8 @@ EOQ;
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 INSERT
-INTO `users` (`pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`)
-VALUES ('{$pincode}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$pushover_sound}', '{$role}');
+INTO `users` (`username`, `password`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`)
+VALUES ('{$username}', '{$password}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$pushover_sound}', '{$role}');
 EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
@@ -250,16 +265,23 @@ EOQ;
     return false;
   }
 
-  public function updateUser($user_id, $pincode, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
+  public function updateUser($user_id, $username, $password = null, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
-    $pincode = $this->dbConn->escapeString($pincode);
+    $username = $this->dbConn->escapeString($username);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `users`
 WHERE `user_id` != '{$user_id}'
-AND `pincode` = '{$pincode}';
+AND `username` = '{$username}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
+      $passwordQuery = null;
+      if (!empty($password)) {
+        $password = password_hash($password, PASSWORD_DEFAULT);
+        $passwordQuery = <<<EOQ
+  `password` = '{$password}',
+EOQ;
+      }
       $first_name = $this->dbConn->escapeString($first_name);
       $last_name = $this->dbConn->escapeString($last_name);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
@@ -269,7 +291,8 @@ EOQ;
       $query = <<<EOQ
 UPDATE `users`
 SET
-  `pincode` = '{$pincode}',
+  `username` = '{$username}',
+{$passwordQuery}
   `first_name` = '{$first_name}',
   `last_name` = '{$last_name}',
   `pushover_user` = '{$pushover_user}',
@@ -324,7 +347,7 @@ EOQ;
     $extra_type = $this->dbConn->escapeString($extra_type);
     $extra_value = $this->dbConn->escapeString($extra_value);
     switch ($type) {
-      case 'pincode':
+      case 'username':
       case 'user_id':
         $table = 'users';
         $extra_table = 'events';
@@ -377,7 +400,7 @@ EOQ;
     switch ($type) {
       case 'users':
         $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
+SELECT `user_id`, `username`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
 FROM `users`
 ORDER BY `last_name`, `first_name`;
 EOQ;
@@ -405,7 +428,7 @@ EOQ;
     switch ($type) {
       case 'user':
         $query = <<<EOQ
-SELECT `user_id`, SUBSTR('000000'||`pincode`,-6) AS `pincode`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
+SELECT `user_id`, `username`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
 FROM `users`
 WHERE `user_id` = '{$value}';
 EOQ;
