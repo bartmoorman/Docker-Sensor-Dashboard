@@ -2,8 +2,8 @@
 require_once('../inc/dashboard.class.php');
 $dashboard = new Dashboard(false, false, false, false);
 
-$output = $logFields = array('success' => null, 'message' => null);
-$log = array();
+$output = $logFields = ['success' => null, 'message' => null];
+$log = [];
 $putEvent = true;
 
 switch ($_REQUEST['func']) {

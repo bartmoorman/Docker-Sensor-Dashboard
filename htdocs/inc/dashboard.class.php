@@ -1,20 +1,22 @@
 <?php
 ini_set('date.timezone', 'UTC');
-ini_set('session.save_path', '/config/sessions');
-ini_set('session.gc_maxlifetime', 24 * 60 * 60);
-ini_set('session.use_strict_mode', true);
-ini_set('session.cookie_lifetime', 24 * 60 * 60);
-ini_set('session.cookie_secure', true);
-ini_set('session.cookie_httponly', true);
 
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
   public $pageLimit = 20;
-  public $temperature = array('scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null);
+  public $temperature = ['scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null];
 
   public function __construct($requireConfigured = true, $requireValidSession = true, $requireAdmin = true, $requireIndex = false) {
-    session_start();
+    session_start([
+      'save_path' => '/config/sessions',
+      'name' => '_sess_dashboard',
+      'gc_maxlifetime' => 60 * 60 * 24 * 7,
+      'cookie_lifetime' => 60 * 60 * 24 * 7,
+      'cookie_secure' => true,
+      'cookie_httponly' => true,
+      'use_strict_mode' => true
+    ]);
 
     if (is_writable($this->dbFile)) {
       $this->connectDb();
@@ -414,7 +416,7 @@ EOQ;
         break;
     }
     if ($objects = $this->dbConn->query($query)) {
-      $output = array();
+      $output = [];
       while ($object = $objects->fetchArray(SQLITE3_ASSOC)) {
         $output[] = $object;
       }
@@ -459,7 +461,7 @@ EOQ;
     return false;
   }
 
-  public function putEvent($action, $message = array()) {
+  public function putEvent($action, $message = []) {
     $user_id = array_key_exists('authenticated', $_SESSION) ? $_SESSION['user_id'] : null;
     $action = $this->dbConn->escapeString($action);
     $message = $this->dbConn->escapeString(json_encode($message));
@@ -485,7 +487,7 @@ ORDER BY `date` DESC
 LIMIT {$start}, {$this->pageLimit};
 EOQ;
     if ($events = $this->dbConn->query($query)) {
-      $output = array();
+      $output = [];
       while ($event = $events->fetchArray(SQLITE3_ASSOC)) {
         $output[] = $event;
       }
@@ -542,11 +544,11 @@ GROUP BY DATETIME((`date` / ({$hours} * 60)) * ({$hours} * 60), 'unixepoch')
 ORDER BY `date`;
 EOQ;
     if ($readings = $this->dbConn->query($query)) {
-      $output = array('temperatureData' => array(), 'humidityData' => array());
+      $output = ['temperatureData' => [], 'humidityData' => []];
       while ($reading = $readings->fetchArray(SQLITE3_ASSOC)) {
         $reading['temperature'] = $this->convertTemperature($reading['temperature']);
-        $output['temperatureData'][] = array('x' => $reading['date'], 'y' => $reading['temperature']);
-        $output['humidityData'][] = array('x' => $reading['date'], 'y' => $reading['humidity']);
+        $output['temperatureData'][] = ['x' => $reading['date'], 'y' => $reading['temperature']];
+        $output['humidityData'][] = ['x' => $reading['date'], 'y' => $reading['humidity']];
       }
       return $output;
     }
@@ -565,16 +567,16 @@ EOQ;
     if ($reading = $this->dbConn->querySingle($query, true)) {
       $reading['min_temperature'] = $this->convertTemperature($reading['min_temperature']);
       $reading['max_temperature'] = $this->convertTemperature($reading['max_temperature']);
-      $output = array(
-        'temperature' => array(
+      $output = [
+        'temperature' => [
           'suggestedMin' => $reading['min_temperature'] < $this->temperature['min'] + $this->temperature['buffer'] ? $this->temperature['min'] : $reading['min_temperature'] - $this->temperature['buffer'],
           'suggestedMax' => $reading['max_temperature'] > $this->temperature['max'] - $this->temperature['buffer'] ? $this->temperature['max'] : $reading['max_temperature'] + $this->temperature['buffer']
-        ),
-        'humidity' => array(
+        ],
+        'humidity' => [
           'suggestedMin' => $reading['min_humidity'] < 1 ? 0 : $reading['min_humidity'] - 1,
           'suggestedMax' => $reading['max_humidity'] > 99 ? 100 : $reading['max_humidity'] + 1
-        )
-      );
+        ]
+      ];
       return $output;
     }
     return false;
@@ -604,7 +606,7 @@ WHERE (LENGTH(`min_temperature`) OR LENGTH(`max_temperature`) OR LENGTH(`min_hum
 AND NOT `disabled`;
 EOQ;
     if ($sensors = $this->dbConn->query($query)) {
-      $output = array();
+      $output = [];
       while ($sensor = $sensors->fetchArray(SQLITE3_ASSOC)) {
         $output[] = $sensor;
       }
@@ -613,7 +615,7 @@ EOQ;
     return false;
   }
 
-  public function sendNotifications($messages) {
+  public function sendNotifications($messages = []) {
     $query = <<<EOQ
 SELECT `user_id`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`
 FROM `users`
@@ -625,7 +627,7 @@ EOQ;
       while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
         $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
         foreach ($messages as $message) {
-          curl_setopt($ch, CURLOPT_POSTFIELDS, array('user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message, 'sound' => $user['pushover_sound']));
+          curl_setopt($ch, CURLOPT_POSTFIELDS, ['user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message, 'sound' => $user['pushover_sound']]);
           curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
           if (curl_exec($ch) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
             $status = 'successful';

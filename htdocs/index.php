@@ -37,7 +37,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
       <select class='btn btn-sm btn-outline-success mr-auto id-hours' data-key='hours'>
         <option value='0'>Period</option>
 <?php
-$periods = array(
+$periods = [
   1 => '1 hour',
   3 => '3 hours',
   6 => '6 hours',
@@ -49,7 +49,7 @@ $periods = array(
   24 * 90 => '90 days',
   24 * 180 => '180 days',
   24 * 365 => '1 year'
-);
+];
 foreach ($periods as $hours => $period) {
   echo "        <option value='{$hours}'>{$period}</option>" . PHP_EOL;
 }
