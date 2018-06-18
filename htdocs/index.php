@@ -26,7 +26,7 @@ if ($dashboard->isAdmin()) {
 ?>
     <canvas id='chart'></canvas>
     <nav class='navbar text-center'>
-      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor_id' data-key='sensor_id'>
+      <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor_id' data-storage='sensor_id'>
         <option value='0'>Sensor</option>
 <?php
 foreach ($dashboard->getObjects('sensors') as $sensor) {
@@ -34,7 +34,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 }
 ?>
       </select>
-      <select class='btn btn-sm btn-outline-success mr-auto id-hours' data-key='hours'>
+      <select class='btn btn-sm btn-outline-success mr-auto id-hours' data-storage='hours'>
         <option value='0'>Period</option>
 <?php
 $periods = [
@@ -63,7 +63,6 @@ foreach ($periods as $hours => $period) {
     <script src='//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js' integrity='sha384-0saKbDOWtYAw5aP4czPUm6ByY5JojfQ9Co6wDgkuM7Zn+anp+4Rj92oGK8cbV91S' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
-        var cookies = ['sensor_id', 'hours'];
         var timer;
         var chart;
         var config = {
@@ -141,10 +140,9 @@ foreach ($periods as $hours => $period) {
             });
         };
 
-        $.each(document.cookie.split(';'), function() {
-          var [key, value] = $.trim(this).split('=');
-          if (cookies.includes(key)) {
-            $(`select.id-${key}`).val(value);
+        $.each(['sensor_id', 'hours'], function(key, value) {
+          if (result = sessionStorage.getItem(value)) {
+            $(`select.id-${value}`).val(result);
           }
         });
 
@@ -156,10 +154,10 @@ foreach ($periods as $hours => $period) {
 
         $('select.id-sensor_id, select.id-hours').change(function() {
           clearTimeout(timer);
+          sessionStorage.setItem($(this).data('storage'), $(this).val());
           if ($('select.id-sensor_id').val() != 0 && $('select.id-hours').val() != 0) {
             getReadingsMinMax();
           }
-          document.cookie = `${$(this).data('key')}=${$(this).val()}`;
         });
 
         $('button.id-nav').click(function() {
