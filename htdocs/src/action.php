@@ -111,7 +111,8 @@ switch ($_REQUEST['func']) {
           $putEvent = false;
         } else {
           $output['success'] = false;
-          $log['user_id'] = $_REQUEST['user_id'];
+          $log['type'] = $_REQUEST['type'];
+          $log['value'] = $_REQUEST['value'];
         }
       } else {
         $output['success'] = false;

@@ -391,6 +391,7 @@ UPDATE `{$table}`
 SET `{$action}_{$extra_type}` = '{$extra_value}'
 WHERE `{$type}` = '{$value}';
 EOQ;
+        break;
     }
     if ($this->dbConn->exec($query)) {
       return true;
