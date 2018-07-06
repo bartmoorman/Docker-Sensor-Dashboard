@@ -545,39 +545,19 @@ GROUP BY DATETIME((`date` / ({$hours} * 60)) * ({$hours} * 60), 'unixepoch')
 ORDER BY `date`;
 EOQ;
     if ($readings = $this->dbConn->query($query)) {
-      $output = ['temperatureData' => [], 'humidityData' => []];
+      $output = ['temperatureData' => [], 'temperature' => ['suggestedMin' => $this->temperature['max'], 'suggestedMax' => $this->temperature['min']], 'humidityData' => [], 'humidity' => ['suggestedMin' => 100, 'suggestedMax' => 0]];
+      while ($reading = $readings->fetchArray(SQLITE3_ASSOC)) {
+        $reading['temperature'] = $this->convertTemperature($reading['temperature']);
+        $output['temperature']['suggestedMin'] = min($output['temperature']['suggestedMin'], $reading['temperature'] - $this->temperature['buffer']);
+        $output['temperature']['suggestedMax'] = max($output['temperature']['suggestedMax'], $reading['temperature'] + $this->temperature['buffer']);
+        $output['humidity']['suggestedMin'] = min($output['humidity']['suggestedMin'], $reading['humidity'] - 1);
+        $output['humidity']['suggestedMax'] = max($output['humidity']['suggestedMax'], $reading['humidity'] + 1);
+      }
       while ($reading = $readings->fetchArray(SQLITE3_ASSOC)) {
         $reading['temperature'] = $this->convertTemperature($reading['temperature']);
         $output['temperatureData'][] = ['x' => $reading['date'], 'y' => $reading['temperature']];
         $output['humidityData'][] = ['x' => $reading['date'], 'y' => $reading['humidity']];
       }
-      return $output;
-    }
-    return false;
-  }
-
-  public function getReadingsMinMax($sensor_id, $hours) {
-    $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $hours = $this->dbConn->escapeString($hours);
-    $query = <<<EOQ
-SELECT ROUND(MIN(`temperature`), 2) AS `min_temperature`, ROUND(MAX(`temperature`), 2) AS `max_temperature`, ROUND(MIN(`humidity`), 2) AS `min_humidity`, ROUND(MAX(`humidity`), 2) AS `max_humidity`
-FROM `readings`
-WHERE `sensor_id` = '${sensor_id}'
-AND `date` > STRFTIME('%s', 'now', '-{$hours} hours');
-EOQ;
-    if ($reading = $this->dbConn->querySingle($query, true)) {
-      $reading['min_temperature'] = $this->convertTemperature($reading['min_temperature']);
-      $reading['max_temperature'] = $this->convertTemperature($reading['max_temperature']);
-      $output = [
-        'temperature' => [
-          'suggestedMin' => $reading['min_temperature'] < $this->temperature['min'] + $this->temperature['buffer'] ? $this->temperature['min'] : $reading['min_temperature'] - $this->temperature['buffer'],
-          'suggestedMax' => $reading['max_temperature'] > $this->temperature['max'] - $this->temperature['buffer'] ? $this->temperature['max'] : $reading['max_temperature'] + $this->temperature['buffer']
-        ],
-        'humidity' => [
-          'suggestedMin' => $reading['min_humidity'] < 1 ? 0 : $reading['min_humidity'] - 1,
-          'suggestedMax' => $reading['max_humidity'] > 99 ? 100 : $reading['max_humidity'] + 1
-        ]
-      ];
       return $output;
     }
     return false;

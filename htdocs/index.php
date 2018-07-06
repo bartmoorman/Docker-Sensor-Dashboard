@@ -64,7 +64,6 @@ foreach ($periods as $hours => $period) {
     <script>
       $(document).ready(function() {
         var timer;
-        var chart;
         var config = {
           type: 'line',
           data: {
@@ -106,27 +105,14 @@ foreach ($periods as $hours => $period) {
           }
         };
 
-        function getReadingsMinMax() {
-          $.get('src/action.php', {"func": "getReadingsMinMax", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
-            .done(function(data) {
-              if (data.success) {
-                config.options.scales.yAxes[0].ticks = data.data.temperature;
-                config.options.scales.yAxes[1].ticks = data.data.humidity;
-              }
-            })
-            .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`getReadingsMinMax failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
-            })
-            .always(function() {
-              chart = new Chart($('#chart'), config);
-              getReadings();
-            });
-        }
+        var chart = new Chart($('#chart'), config);
 
         function getReadings() {
           $.get('src/action.php', {"func": "getReadings", "sensor_id": $('select.id-sensor_id').val(), "hours": $('select.id-hours').val()})
             .done(function(data) {
               if (data.success) {
+                config.options.scales.yAxes[0].ticks = data.data.temperature;
+                config.options.scales.yAxes[1].ticks = data.data.humidity;
                 config.data.datasets[0].data = data.data.temperatureData;
                 config.data.datasets[1].data = data.data.humidityData;
                 chart.update();
@@ -141,22 +127,28 @@ foreach ($periods as $hours => $period) {
         };
 
         $.each(['sensor_id', 'hours'], function(key, value) {
-          if (result = sessionStorage.getItem(value)) {
-            $(`select.id-${value}`).val(result);
+          if (result = localStorage.getItem(value)) {
+            if ($(`select.id-${value} option[value="${result}"]`).length) {
+              $(`select.id-${value}`).val(result);
+            }
           }
         });
 
         if ($('select.id-sensor_id').val() != 0 && $('select.id-hours').val() != 0) {
-          getReadingsMinMax();
-        } else {
-          chart = new Chart($('#chart'), config);
+          getReadings();
         }
 
         $('select.id-sensor_id, select.id-hours').change(function() {
           clearTimeout(timer);
-          sessionStorage.setItem($(this).data('storage'), $(this).val());
+          localStorage.setItem($(this).data('storage'), $(this).val());
           if ($('select.id-sensor_id').val() != 0 && $('select.id-hours').val() != 0) {
-            getReadingsMinMax();
+            getReadings();
+          } else {
+            delete config.options.scales.yAxes[0].ticks;
+            delete config.options.scales.yAxes[1].ticks;
+            delete config.data.datasets[0].data;
+            delete config.data.datasets[1].data;
+            chart.update();
           }
         });
 

@@ -133,10 +133,9 @@ switch ($_REQUEST['func']) {
     }
     break;
   case 'getReadings':
-  case 'getReadingsMinMax':
     if ($dashboard->isValidSession()) {
       if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['hours'])) {
-        if ($output['data'] = $dashboard->{$_REQUEST['func']}($_REQUEST['sensor_id'], $_REQUEST['hours'])) {
+        if ($output['data'] = $dashboard->getReadings($_REQUEST['sensor_id'], $_REQUEST['hours'])) {
           $output['success'] = true;
           $putEvent = false;
         } else {
