@@ -4,6 +4,7 @@ ini_set('date.timezone', 'UTC');
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
+  private $memcacheConn;
   private $pushoverAppToken;
   public $pageLimit = 20;
   public $temperature = ['scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null];
@@ -25,6 +26,8 @@ class Dashboard {
       $this->connectDb();
       $this->initDb();
     }
+
+    $this->connectMemcache();
 
     if ($this->isConfigured()) {
       if ($this->isValidSession()) {
@@ -123,6 +126,14 @@ CREATE TABLE IF NOT EXISTS `readings` (
 );
 EOQ;
     if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
+  }
+
+  private function connectMemcache() {
+    if ($this->memcacheConn = new Memcached()) {
+      $this->memcacheConn->addServer('localhost', null);
       return true;
     }
     return false;
@@ -583,10 +594,15 @@ EOQ;
   }
 
   public function getSounds() {
-    $ch = curl_init("https://api.pushover.net/1/sounds.json?token={$this->pushoverAppToken}");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    if (($result = curl_exec($ch)) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
+    if ($result = $this->memcacheConn->get('pushoverSounds')) {
       return json_decode($result)->sounds;
+    } else {
+      $ch = curl_init("https://api.pushover.net/1/sounds.json?token={$this->pushoverAppToken}");
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      if (($result = curl_exec($ch)) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
+        $this->memcacheConn->set('pushoverSounds', $result, 60 * 60 * 24);
+        return json_decode($result)->sounds;
+      }
     }
     return false;
   }
