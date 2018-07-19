@@ -36,11 +36,12 @@ switch ($_REQUEST['func']) {
   case 'createSensor':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
       if (!empty($_REQUEST['name'])) {
+        $token = isset($_REQUEST['token']) ? $_REQUEST['token'] : null;
         $min_temperature = isset($_REQUEST['min_temperature']) ? $_REQUEST['min_temperature'] : null;
         $max_temperature = isset($_REQUEST['max_temperature']) ? $_REQUEST['max_temperature'] : null;
         $min_humidity = isset($_REQUEST['min_humidity']) ? $_REQUEST['min_humidity'] : null;
         $max_humidity = isset($_REQUEST['max_humidity']) ? $_REQUEST['max_humidity'] : null;
-        $output['success'] = $dashboard->createSensor($_REQUEST['name'], $min_temperature, $max_temperature, $min_humidity, $max_humidity);
+        $output['success'] = $dashboard->createSensor($_REQUEST['name'], $token, $min_temperature, $max_temperature, $min_humidity, $max_humidity);
       } else {
         $output['success'] = false;
         $output['message'] = 'No name supplied';

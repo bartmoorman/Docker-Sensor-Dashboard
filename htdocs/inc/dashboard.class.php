@@ -242,8 +242,8 @@ EOQ;
     return false;
   }
 
-  public function createSensor($name, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
-    $token = bin2hex(random_bytes(8));
+  public function createSensor($name, $token = null, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
+    $token = !$token ? bin2hex(random_bytes(8)) : $this->dbConn->escapeString($token);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `sensors`
@@ -410,7 +410,7 @@ EOQ;
         break;
       case 'sensors':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `disabled`
+SELECT `sensor_id`, `name`, `token`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `disabled`
 FROM `sensors`
 ORDER BY `name`;
 EOQ;
