@@ -14,7 +14,9 @@ RUN echo 'deb http://ppa.launchpad.net/certbot/certbot/ubuntu xenial main' > /et
     certbot \
     curl \
     libapache2-mod-php \
+    memcached \
     php-curl \
+    php-memcached \
     php-sqlite3 \
     ssl-cert \
  && a2enmod \

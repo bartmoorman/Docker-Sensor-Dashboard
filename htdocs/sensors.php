@@ -40,10 +40,10 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
   echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-sensor_id='{$sensor['sensor_id']}'>Details</button></td>" . PHP_EOL;
   echo "            <td>{$sensor['sensor_id']}</td>" . PHP_EOL;
   echo "            <td>{$sensor['name']}</td>" . PHP_EOL;
-  echo "            <td>{$sensor['min_temperature']} {$dashboard->temperature['key']}</td>" . PHP_EOL;
-  echo "            <td>{$sensor['max_temperature']} {$dashboard->temperature['key']}</td>" . PHP_EOL;
-  echo "            <td>{$sensor['min_humidity']} %</td>" . PHP_EOL;
-  echo "            <td>{$sensor['max_humidity']} %</td>" . PHP_EOL;
+  echo "            <td>{$sensor['min_temperature']}{$dashboard->temperature['key']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['max_temperature']}{$dashboard->temperature['key']}</td>" . PHP_EOL;
+  echo "            <td>{$sensor['min_humidity']}%</td>" . PHP_EOL;
+  echo "            <td>{$sensor['max_humidity']}%</td>" . PHP_EOL;
   echo "          </tr>" . PHP_EOL;
 }
 ?>

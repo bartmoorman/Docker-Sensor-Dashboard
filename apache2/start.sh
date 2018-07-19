@@ -21,6 +21,11 @@ if [ -f ${pidfile} ]; then
     fi
 fi
 
+$(which memcached) \
+    -l 127.0.0.1 \
+    -d \
+    -u memcache
+
 $(which apache2ctl) \
     -D ${HTTPD_SECURITY:-HTTPD_SSL} \
     -D ${HTTPD_REDIRECT:-HTTPD_REDIRECT_SSL}

@@ -10,10 +10,10 @@ while (true) {
       foreach (['temperature' => $dashboard->temperature['key'], 'humidity' => '%'] as $element => $key) {
         if (strlen($sensor['min_' . $element])) {
           if ($reading[$element] < $sensor['min_' . $element] && !$sensor['notified_min_' . $element]) {
-            $messages[] = sprintf('%s (sensor_id: %u) %s is too low (%0.2f %s < %0.2f %s)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $key, $sensor['min_' . $element], $key);
+            $messages[] = sprintf('%s (sensor_id: %u) %s is too low (%0.2f%s < %0.2f%s)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $key, $sensor['min_' . $element], $key);
             $dashboard->modifyObject('notified', 'sensor_id', $sensor['sensor_id'], 'min_' . $element, 1);
           } elseif ($reading[$element] > $sensor['min_' . $element] && $sensor['notified_min_' . $element]) {
-            $messages[] = sprintf('%s (sensor_id: %u) %s is within range (%0.2f %s > %0.2f %s)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $key, $sensor['min_' . $element], $key);
+            $messages[] = sprintf('%s (sensor_id: %u) %s is within range (%0.2f%s > %0.2f%s)', $sensor['name'], $sensor['sensor_id'], $element, $reading[$element], $key, $sensor['min_' . $element], $key);
             $dashboard->modifyObject('notified', 'sensor_id', $sensor['sensor_id'], 'min_' . $element, 0);
           }
         }
