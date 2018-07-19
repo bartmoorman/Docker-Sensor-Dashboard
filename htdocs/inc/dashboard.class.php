@@ -4,6 +4,7 @@ ini_set('date.timezone', 'UTC');
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
+  private $pushoverAppToken;
   public $pageLimit = 20;
   public $temperature = ['scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null];
 
@@ -39,6 +40,8 @@ class Dashboard {
       header('Location: setup.php');
       exit;
     }
+
+    $this->pushoverAppToken = getenv('PUSHOVER_APP_TOKEN');
 
     switch (strtolower(getenv('TEMPERATURE_SCALE'))) {
       case 'f':
@@ -575,6 +578,15 @@ EOQ;
     if ($reading = $this->dbConn->querySingle($query, true)) {
       $reading['temperature'] = $this->convertTemperature($reading['temperature']);
       return $reading;
+    }
+    return false;
+  }
+
+  public function getSounds() {
+    $ch = curl_init("https://api.pushover.net/1/sounds.json?token={$this->pushoverAppToken}");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    if (($result = curl_exec($ch)) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
+      return json_decode($result)->sounds;
     }
     return false;
   }
