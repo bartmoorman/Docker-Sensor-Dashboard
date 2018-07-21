@@ -13,12 +13,9 @@ $dashboard = new Dashboard(true, true, true, false);
     <link rel='stylesheet' href='//use.fontawesome.com/releases/v5.1.0/css/all.css' integrity='sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt' crossorigin='anonymous'>
   </head>
   <body>
-    <nav class='navbar'>
-      <button class='btn btn-sm btn-outline-success id-nav' data-href='<?php echo dirname($_SERVER['PHP_SELF']) ?>'>Home</button>
-      <button class='btn btn-sm btn-outline-info ml-auto mr-2 id-nav' data-href='sensors.php'>Sensors</button>
-      <button class='btn btn-sm btn-outline-info mr-2 id-nav' data-href='users.php'>Users</button>
-      <button class='btn btn-sm btn-outline-info id-nav' data-href='events.php'>Events</button>
-    </nav>
+<?php
+include_once('header.php');
+?>
     <div class='container'>
       <table class='table table-striped table-hover table-sm'>
         <thead>
@@ -60,11 +57,11 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
             <div class='modal-body'>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Sensor Name <sup class='text-danger'>*</sup></label>
+                  <label>Sensor Name <sup class='text-danger' data-toggle='tooltip' title='Required'>*</sup></label>
                   <input class='form-control' id='name' type='text' name='name' required>
                 </div>
                 <div class='form-group col'>
-                  <label>Access Token <sup class='text-danger id-required'>*</sup></label>
+                  <label>Access Token <sup class='text-danger id-required' data-toggle='tooltip' title='Required'>*</sup></label>
                   <input class='form-control id-token' id='token' type='text' name='token' minlength='16' maxlength='16' pattern='[A-Za-z0-9]{16}' required>
                 </div>
               </div>
@@ -110,7 +107,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
               </div>
               <div class='form-row id-notified'>
                 <fieldset class='form-group col' disabled>
-                  <label>Notifications Sent</label>
+                  <label>Notifications Sent <sup class='text-info' data-toggle='tooltip' title='Informational'>*</sup></label>
                   <div class='form-check'>
                     <input class='form-check-input' id='notified_min_temperature' type='checkbox'>
                     <label class='form-check-label'>Min. Temperature</label>
@@ -145,6 +142,8 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
     <script src='//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js' integrity='sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
+        $('[data-toggle="tooltip"]').tooltip();
+
         $('button.id-add').click(function() {
           $('h5.modal-title').text('Add Sensor');
           $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
@@ -189,7 +188,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
             });
         });
 
-       $('button.id-modify').click(function() {
+        $('button.id-modify').click(function() {
           if (confirm(`Want to ${$(this).data('action').toUpperCase()} sensor ${$(this).data('sensor_id')}?`)) {
             $.get('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "sensor_id", "value": $(this).data('sensor_id')})
               .done(function(data) {
@@ -198,7 +197,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 }
               })
               .fail(function(jqxhr, textStatus, errorThrown) {
-                console.log(`modifySensor failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+                console.log(`modifyObject failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
               });
           }
         });

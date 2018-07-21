@@ -5,7 +5,7 @@ $dashboard = new Dashboard(true, true, true, false);
 <!DOCTYPE html>
 <html lang='en'>
   <head>
-    <title>Dashboard - Users</title>
+    <title>Sensor Dashboard - Users</title>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
     <link rel='stylesheet' href='//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css' integrity='sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB' crossorigin='anonymous'>
@@ -13,12 +13,9 @@ $dashboard = new Dashboard(true, true, true, false);
     <link rel='stylesheet' href='//use.fontawesome.com/releases/v5.1.0/css/all.css' integrity='sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt' crossorigin='anonymous'>
   </head>
   <body>
-    <nav class='navbar'>
-      <button class='btn btn-sm btn-outline-success id-nav' data-href='<?php echo dirname($_SERVER['PHP_SELF']) ?>'>Home</button>
-      <button class='btn btn-sm btn-outline-info ml-auto mr-2 id-nav' data-href='sensors.php'>Sensors</button>
-      <button class='btn btn-sm btn-outline-info mr-2 id-nav' data-href='users.php'>Users</button>
-      <button class='btn btn-sm btn-outline-info id-nav' data-href='events.php'>Events</button>
-    </nav>
+<?php
+include_once('header.php');
+?>
     <div class='container'>
       <table class='table table-striped table-hover table-sm'>
         <thead>
@@ -27,7 +24,7 @@ $dashboard = new Dashboard(true, true, true, false);
             <th>User ID</th>
             <th>Username</th>
             <th>User Name</th>
-            <th>Pushover Notifications</th>
+            <th>Notifications</th>
             <th>Role</th>
           </tr>
         </thead>
@@ -63,17 +60,17 @@ foreach ($dashboard->getObjects('users') as $user) {
             <div class='modal-body'>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Username <sup class='text-danger'>*</sup></label>
+                  <label>Username <sup class='text-danger' data-toggle='tooltip' title='Required'>*</sup></label>
                   <input class='form-control' id='username' type='text' name='username' pattern='[A-za-z0-9]+' required>
                 </div>
                 <div class='form-group col'>
-                  <label>Password <sup class='text-danger id-required'>*</sup></label>
+                  <label>Password <sup class='text-danger id-required' data-toggle='tooltip' title='Required'>*</sup></label>
                   <input class='form-control id-password' id='password' type='password' name='password' minlength='6' required>
                 </div>
               </div>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>First Name <sup class='text-danger'>*</sup></label>
+                  <label>First Name <sup class='text-danger' data-toggle='tooltip' title='Required'>*</sup></label>
                   <input class='form-control' id='first_name' type='text' name='first_name' required>
                 </div>
                 <div class='form-group col'>
@@ -83,7 +80,7 @@ foreach ($dashboard->getObjects('users') as $user) {
               </div>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Role <sup class='text-danger'>*</sup></label>
+                  <label>Role <sup class='text-danger' data-toggle='tooltip' title='Required'>*</sup></label>
                   <select class='form-control' id='role' name='role' required>
                     <option value='user'>user</option>
                     <option value='admin'>admin</option>
@@ -103,14 +100,19 @@ foreach ($dashboard->getObjects('users') as $user) {
               <div class='form-row'>
                 <div class='form-group col'>
                   <label>Pushover Sound</label>
-                  <select class='form-control' id='pushover_sound' name='pushover_sound'>
-                    <option value=''>User Default</option>
+                  <div class='input-group'>
+                    <select class='form-control' id='pushover_sound' name='pushover_sound'>
+                      <option value=''>User Default</option>
 <?php
 foreach ($dashboard->getSounds() as $value => $text) {
-  echo "                    <option value='{$value}'>{$text}</option>" . PHP_EOL;
+  echo "                      <option value='{$value}'>{$text}</option>" . PHP_EOL;
 }
 ?>
-                  </select>
+                    </select>
+                    <div class='input-group-append'>
+                      <a class='input-group-text' target='_blank' href='https://pushover.net/api#sounds'>Listen</a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -129,6 +131,8 @@ foreach ($dashboard->getSounds() as $value => $text) {
     <script src='//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js' integrity='sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T' crossorigin='anonymous'></script>
     <script>
       $(document).ready(function() {
+        $('[data-toggle="tooltip"]').tooltip();
+
         $('button.id-add').click(function() {
           $('h5.modal-title').text('Add User');
           $('form').removeData('user_id').data('func', 'createUser').trigger('reset');
@@ -177,7 +181,7 @@ foreach ($dashboard->getSounds() as $value => $text) {
                 }
               })
               .fail(function(jqxhr, textStatus, errorThrown) {
-                console.log(`removeUser failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+                console.log(`modifyObject failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
               });
           }
         });
