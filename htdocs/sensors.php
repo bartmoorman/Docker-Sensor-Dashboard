@@ -124,6 +124,10 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                     <input class='form-check-input' id='notified_max_humidity' type='checkbox'>
                     <label class='form-check-label'>Max. Humidity</label>
                   </div>
+                  <div class='form-check'>
+                    <input class='form-check-input' id='notified_insufficient_data' type='checkbox'>
+                    <label class='form-check-label'>Insufficient Data</label>
+                  </div>
                 </fieldset>
               </div>
             </div>
@@ -178,6 +182,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 $('#notified_max_temperature').prop('checked', sensor.notified_max_temperature);
                 $('#notified_min_humidity').prop('checked', sensor.notified_min_humidity);
                 $('#notified_max_humidity').prop('checked', sensor.notified_max_humidity);
+                $('#notified_insufficient_data').prop('checked', sensor.notified_insufficient_data);
                 $('button.id-modify.id-volatile').data('action', sensor.disabled ? 'enable' : 'disable').text(sensor.disabled ? 'Enable' : 'Disable');
                 $('button.id-modify').data('sensor_id', sensor.sensor_id);
                 $('div.id-modal').modal('toggle');

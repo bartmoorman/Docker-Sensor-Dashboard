@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `last_name` TEXT,
   `pushover_user` TEXT,
   `pushover_token` TEXT,
+  `pushover_priority` INTEGER DEFAULT 0,
+  `pushover_retry` INTEGER DEFAULT 60,
+  `pushover_expire` INTEGER DEFAULT 3600,
   `pushover_sound` TEXT,
   `role` TEXT NOT NULL,
   `disabled` INTEGER NOT NULL DEFAULT 0
@@ -115,6 +118,7 @@ CREATE TABLE IF NOT EXISTS `sensors` (
   `notified_max_temperature` INTEGER NOT NULL DEFAULT 0,
   `notified_min_humidity` INTEGER NOT NULL DEFAULT 0,
   `notified_max_humidity` INTEGER NOT NULL DEFAULT 0,
+  `notified_insufficient_data` INTEGER NOT NULL DEFAULT 0,
   `disabled` INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS `readings` (
@@ -229,7 +233,7 @@ EOQ;
     return false;
   }
 
-  public function createUser($username, $password, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
+  public function createUser($username, $password, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_priority = null, $pushover_retry = null, $pushover_expire = null, $pushover_sound = null, $role) {
     $username = $this->dbConn->escapeString($username);
     $query = <<<EOQ
 SELECT COUNT(*)
@@ -242,12 +246,15 @@ EOQ;
       $last_name = $this->dbConn->escapeString($last_name);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
       $pushover_token = $this->dbConn->escapeString($pushover_token);
+      $pushover_priority = $this->dbConn->escapeString($pushover_priority);
+      $pushover_retry = $this->dbConn->escapeString($pushover_retry);
+      $pushover_expire = $this->dbConn->escapeString($pushover_expire);
       $pushover_sound = $this->dbConn->escapeString($pushover_sound);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
 INSERT
-INTO `users` (`username`, `password`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`)
-VALUES ('{$username}', '{$password}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$pushover_sound}', '{$role}');
+INTO `users` (`username`, `password`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_priority`, `pushover_retry`, `pushover_expire`, `pushover_sound`, `role`)
+VALUES ('{$username}', '{$password}', '{$first_name}', '{$last_name}', '{$pushover_user}', '{$pushover_token}', '{$pushover_priority}', '{$pushover_retry}', '{$pushover_expire}', '{$pushover_sound}', '{$role}');
 EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
@@ -281,7 +288,7 @@ EOQ;
     return false;
   }
 
-  public function updateUser($user_id, $username, $password = null, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_sound = null, $role) {
+  public function updateUser($user_id, $username, $password = null, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_priority = null, $pushover_retry = null, $pushover_expire = null, $pushover_sound = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
     $username = $this->dbConn->escapeString($username);
     $query = <<<EOQ
@@ -302,6 +309,9 @@ EOQ;
       $last_name = $this->dbConn->escapeString($last_name);
       $pushover_user = $this->dbConn->escapeString($pushover_user);
       $pushover_token = $this->dbConn->escapeString($pushover_token);
+      $pushover_priority = $this->dbConn->escapeString($pushover_priority);
+      $pushover_retry = $this->dbConn->escapeString($pushover_retry);
+      $pushover_expire = $this->dbConn->escapeString($pushover_expire);
       $pushover_sound = $this->dbConn->escapeString($pushover_sound);
       $role = $this->dbConn->escapeString($role);
       $query = <<<EOQ
@@ -313,6 +323,9 @@ SET
   `last_name` = '{$last_name}',
   `pushover_user` = '{$pushover_user}',
   `pushover_token` = '{$pushover_token}',
+  `pushover_priority` = '{$pushover_priority}',
+  `pushover_retry` = '{$pushover_retry}',
+  `pushover_expire` = '{$pushover_expire}',
   `pushover_sound` = '{$pushover_sound}',
   `role` = '{$role}'
 WHERE `user_id` = '{$user_id}';
@@ -417,14 +430,14 @@ EOQ;
     switch ($type) {
       case 'users':
         $query = <<<EOQ
-SELECT `user_id`, `username`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
+SELECT `user_id`, `username`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_priority`, `pushover_retry`, `pushover_expire`, `pushover_sound`, `role`, `disabled`
 FROM `users`
 ORDER BY `last_name`, `first_name`;
 EOQ;
         break;
       case 'sensors':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `disabled`
+SELECT `sensor_id`, `name`, `token`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `notified_insufficient_data`, `disabled`
 FROM `sensors`
 ORDER BY `name`;
 EOQ;
@@ -445,14 +458,14 @@ EOQ;
     switch ($type) {
       case 'user':
         $query = <<<EOQ
-SELECT `user_id`, `username`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`, `role`, `disabled`
+SELECT `user_id`, `username`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_priority`, `pushover_retry`, `pushover_expire`, `pushover_sound`, `role`, `disabled`
 FROM `users`
 WHERE `user_id` = '{$value}';
 EOQ;
         break;
       case 'sensor':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `disabled`
+SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `notified_insufficient_data`, `disabled`
 FROM `sensors`
 WHERE `sensor_id` = '{$value}';
 EOQ;
@@ -581,7 +594,7 @@ EOQ;
     $sensor_id = $this->dbConn->escapeString($sensor_id);
     $minutes = $this->dbConn->escapeString($minutes);
     $query = <<<EOQ
-SELECT ROUND(AVG(`temperature`), 2) AS `temperature`, ROUND(AVG(`humidity`), 2) AS `humidity`
+SELECT ROUND(AVG(`temperature`), 2) AS `temperature`, ROUND(AVG(`humidity`), 2) AS `humidity`, COUNT(*) AS `count`
 FROM `readings`
 WHERE `sensor_id` = '{$sensor_id}'
 AND `date` > STRFTIME('%s', 'now', '-{$minutes} minutes');
@@ -609,7 +622,7 @@ EOQ;
 
   public function getSensorNotifications() {
     $query = <<<EOQ
-SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`
+SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `notified_insufficient_data`
 FROM `sensors`
 WHERE (LENGTH(`min_temperature`) OR LENGTH(`max_temperature`) OR LENGTH(`min_humidity`) OR LENGTH(`max_humidity`))
 AND NOT `disabled`;
@@ -626,7 +639,7 @@ EOQ;
 
   public function sendNotifications($messages = []) {
     $query = <<<EOQ
-SELECT `user_id`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_sound`
+SELECT `user_id`, `first_name`, `last_name`, `pushover_user`, `pushover_token`, `pushover_priority`, `pushover_retry`, `pushover_expire`, `pushover_sound`
 FROM `users`
 WHERE LENGTH(`pushover_user`) AND LENGTH(`pushover_token`)
 AND NOT `disabled`;
@@ -636,7 +649,7 @@ EOQ;
       while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
         $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
         foreach ($messages as $message) {
-          curl_setopt($ch, CURLOPT_POSTFIELDS, ['user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message, 'sound' => $user['pushover_sound']]);
+          curl_setopt($ch, CURLOPT_POSTFIELDS, ['user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message, 'priority' => $user['pushover_priority'], 'retry' => $user['pushover_retry'], 'expire' => $user['pushover_expire'], 'sound' => $user['pushover_sound']]);
           curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
           if (curl_exec($ch) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
             $status = 'successful';

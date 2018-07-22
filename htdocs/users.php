@@ -24,8 +24,8 @@ include_once('header.php');
             <th>User ID</th>
             <th>Username</th>
             <th>User Name</th>
-            <th>Notifications</th>
             <th>Role</th>
+            <th>Notifications</th>
           </tr>
         </thead>
         <tbody>
@@ -38,12 +38,12 @@ foreach ($dashboard->getObjects('users') as $user) {
   echo "            <td>{$user['user_id']}</td>" . PHP_EOL;
   echo "            <td>{$user['username']}</td>" . PHP_EOL;
   echo "            <td>{$user_name}</td>" . PHP_EOL;
+  echo "            <td>{$user['role']}</td>" . PHP_EOL;
   if (!empty($user['pushover_user']) && !empty($user['pushover_token'])) {
     echo "            <td><input type='checkbox' checked disabled></td>" . PHP_EOL;
   } else {
     echo "            <td><input type='checkbox' disabled></td>" . PHP_EOL;
   }
-  echo "            <td>{$user['role']}</td>" . PHP_EOL;
   echo "          </tr>" . PHP_EOL;
 }
 ?>
@@ -99,20 +99,35 @@ foreach ($dashboard->getObjects('users') as $user) {
               </div>
               <div class='form-row'>
                 <div class='form-group col'>
-                  <label>Pushover Sound</label>
-                  <div class='input-group'>
-                    <select class='form-control' id='pushover_sound' name='pushover_sound'>
-                      <option value=''>User Default</option>
+                  <label>Pushover Sound <sup><a target='_blank' href='https://pushover.net/api#sounds'>Listen</a></sup></label>
+                  <select class='form-control' id='pushover_sound' name='pushover_sound'>
+                    <option value=''>User Default</option>
 <?php
 foreach ($dashboard->getSounds() as $value => $text) {
-  echo "                      <option value='{$value}'>{$text}</option>" . PHP_EOL;
+  echo "                    <option value='{$value}'>{$text}</option>" . PHP_EOL;
 }
 ?>
-                    </select>
-                    <div class='input-group-append'>
-                      <a class='input-group-text' target='_blank' href='https://pushover.net/api#sounds'>Listen</a>
-                    </div>
-                  </div>
+                  </select>
+                </div>
+                <div class='form-group col'>
+                  <label>Pushover Priority</label>
+                  <select class='form-control id-pushover_priority' id='pushover_priority' name='pushover_priority'>
+<?php
+for ($priority = -2; $priority <= 2; $priority++) {
+  echo "                    <option value='{$priority}'>{$priority}</option>" . PHP_EOL;
+}
+?>
+                  </select>
+                </div>
+              </div>
+              <div class='form-row id-required'>
+                <div class='form-group col'>
+                  <label>Pushover Retry <sup class='text-danger' data-toggle='tooltip' title='Required'>*</sup></label>
+                  <input class='form-control id-pushover_retry' id='pushover_retry' type='number' name='pushover_retry' min='30' required>
+                </div>
+                <div class='form-group col'>
+                  <label>Pushover Expire <sup class='text-danger' data-toggle='tooltip' title='Required'>*</sup></label>
+                  <input class='form-control id-pushover_expire' id='pushover_expire' type='number' name='pushover_expire' max='10800' required>
                 </div>
               </div>
             </div>
@@ -138,6 +153,10 @@ foreach ($dashboard->getSounds() as $value => $text) {
           $('form').removeData('user_id').data('func', 'createUser').trigger('reset');
           $('sup.id-required').removeClass('d-none');
           $('input.id-password').prop('required', true);
+          $('select.id-pushover_priority').val(0);
+          $('div.id-required').addClass('d-none');
+          $('input.id-pushover_retry').val(60);
+          $('input.id-pushover_expire').val(3600);
           $('button.id-modify').addClass('d-none').removeData('user_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
@@ -160,6 +179,10 @@ foreach ($dashboard->getSounds() as $value => $text) {
                 $('#last_name').val(user.last_name);
                 $('#pushover_user').val(user.pushover_user);
                 $('#pushover_token').val(user.pushover_token);
+                $('#pushover_priority').val(user.pushover_priority);
+                $('div.id-required').toggleClass('d-none', user.pushover_priority != 2 ? true : false)
+                $('#pushover_retry').val(user.pushover_retry);
+                $('#pushover_expire').val(user.pushover_expire);
                 $('#pushover_sound').val(user.pushover_sound);
                 $('#role').val(user.role);
                 $('button.id-modify.id-volatile').data('action', user.disabled ? 'enable' : 'disable').text(user.disabled ? 'Enable' : 'Disable');
@@ -186,9 +209,13 @@ foreach ($dashboard->getSounds() as $value => $text) {
           }
         });
 
+        $('select.id-pushover_priority').change(function() {
+          $('div.id-required').toggleClass('d-none', $(this).val() != 2 ? true : false);
+        });
+
         $('form').submit(function(e) {
           e.preventDefault();
-          $.post('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "username": $('#username').val(), "password": $('#password').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "pushover_sound": $('#pushover_sound').val(), "role": $('#role').val()})
+          $.post('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "username": $('#username').val(), "password": $('#password').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "pushover_priority": $('#pushover_priority').val(), "pushover_retry": $('#pushover_retry').val(), "pushover_expire": $('#pushover_expire').val(), "pushover_sound": $('#pushover_sound').val(), "role": $('#role').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();
