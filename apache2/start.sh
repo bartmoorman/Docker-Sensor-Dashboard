@@ -26,11 +26,14 @@ $(which memcached) \
     -d \
     -u memcache
 
-$(which apache2ctl) \
-    -D ${HTTPD_SECURITY:-HTTPD_SSL} \
-    -D ${HTTPD_REDIRECT:-HTTPD_REDIRECT_SSL}
+sleep 1
 
-exec su \
+$(which su) \
     -c $(which notifications.php) \
     -s /bin/bash \
-    www-data
+    www-data &
+
+exec $(which apache2ctl) \
+    -D FOREGROUND \
+    -D ${HTTPD_SECURITY:-HTTPD_SSL} \
+    -D ${HTTPD_REDIRECT:-HTTPD_REDIRECT_SSL}
