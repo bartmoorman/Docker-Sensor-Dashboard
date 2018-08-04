@@ -105,31 +105,6 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                   </div>
                 </div>
               </div>
-              <div class='form-row id-notified'>
-                <fieldset class='form-group col' disabled>
-                  <label>Notifications Sent <sup class='text-info' data-toggle='tooltip' title='Informational'>*</sup></label>
-                  <div class='form-check'>
-                    <input class='form-check-input' id='notified_min_temperature' type='checkbox'>
-                    <label class='form-check-label'>Min. Temperature</label>
-                  </div>
-                  <div class='form-check'>
-                    <input class='form-check-input' id='notified_max_temperature' type='checkbox'>
-                    <label class='form-check-label'>Max. Temperature</label>
-                  </div>
-                  <div class='form-check'>
-                    <input class='form-check-input' id='notified_min_humidity' type='checkbox'>
-                    <label class='form-check-label'>Min. Humidity</label>
-                  </div>
-                  <div class='form-check'>
-                    <input class='form-check-input' id='notified_max_humidity' type='checkbox'>
-                    <label class='form-check-label'>Max. Humidity</label>
-                  </div>
-                  <div class='form-check'>
-                    <input class='form-check-input' id='notified_insufficient_data' type='checkbox'>
-                    <label class='form-check-label'>Insufficient Data</label>
-                  </div>
-                </fieldset>
-              </div>
             </div>
             <div class='modal-footer'>
               <button type='button' class='btn btn-outline-warning id-modify id-volatile'></button>
@@ -153,7 +128,6 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
           $('sup.id-required').addClass('d-none');
           $('input.id-token').prop('required', false).attr('placeholder', 'Will be generated if empty');
-          $('div.id-notified').addClass('d-none');
           $('button.id-modify').addClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
@@ -164,7 +138,6 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('form').removeData('sensor_id').data('func', 'updateSensor').trigger('reset');
           $('sup.id-required').removeClass('d-none');
           $('input.id-token').removeAttr('placeholder').prop('required', true);
-          $('div.id-notified').removeClass('d-none');
           $('button.id-modify').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
           $.get('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
@@ -178,11 +151,6 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 $('#max_temperature').val(sensor.max_temperature);
                 $('#min_humidity').val(sensor.min_humidity);
                 $('#max_humidity').val(sensor.max_humidity);
-                $('#notified_min_temperature').prop('checked', sensor.notified_min_temperature);
-                $('#notified_max_temperature').prop('checked', sensor.notified_max_temperature);
-                $('#notified_min_humidity').prop('checked', sensor.notified_min_humidity);
-                $('#notified_max_humidity').prop('checked', sensor.notified_max_humidity);
-                $('#notified_insufficient_data').prop('checked', sensor.notified_insufficient_data);
                 $('button.id-modify.id-volatile').data('action', sensor.disabled ? 'enable' : 'disable').text(sensor.disabled ? 'Enable' : 'Disable');
                 $('button.id-modify').data('sensor_id', sensor.sensor_id);
                 $('div.id-modal').modal('toggle');

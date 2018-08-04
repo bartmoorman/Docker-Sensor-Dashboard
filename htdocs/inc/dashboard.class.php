@@ -2,7 +2,7 @@
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
-  private $memcacheConn;
+  public $memcacheConn;
   private $pushoverAppToken;
   public $pageLimit = 20;
   public $temperature = ['scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null];
@@ -112,11 +112,6 @@ CREATE TABLE IF NOT EXISTS `sensors` (
   `max_temperature` NUMERIC,
   `min_humidity` NUMERIC,
   `max_humidity` NUMERIC,
-  `notified_min_temperature` INTEGER NOT NULL DEFAULT 0,
-  `notified_max_temperature` INTEGER NOT NULL DEFAULT 0,
-  `notified_min_humidity` INTEGER NOT NULL DEFAULT 0,
-  `notified_max_humidity` INTEGER NOT NULL DEFAULT 0,
-  `notified_insufficient_data` INTEGER NOT NULL DEFAULT 0,
   `disabled` INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS `readings` (
@@ -410,13 +405,6 @@ FROM `{$extra_table}`
 WHERE `{$type}` = '{$value}';
 EOQ;
         break;
-      case 'notified':
-        $query = <<<EOQ
-UPDATE `{$table}`
-SET `{$action}_{$extra_type}` = '{$extra_value}'
-WHERE `{$type}` = '{$value}';
-EOQ;
-        break;
     }
     if ($this->dbConn->exec($query)) {
       return true;
@@ -435,7 +423,7 @@ EOQ;
         break;
       case 'sensors':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `notified_insufficient_data`, `disabled`
+SELECT `sensor_id`, `name`, `token`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `disabled`
 FROM `sensors`
 ORDER BY `name`;
 EOQ;
@@ -463,7 +451,7 @@ EOQ;
         break;
       case 'sensor':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `notified_insufficient_data`, `disabled`
+SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
 FROM `sensors`
 WHERE `sensor_id` = '{$value}';
 EOQ;
@@ -620,7 +608,7 @@ EOQ;
 
   public function getSensorNotifications() {
     $query = <<<EOQ
-SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `notified_min_temperature`, `notified_max_temperature`, `notified_min_humidity`, `notified_max_humidity`, `notified_insufficient_data`
+SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`
 FROM `sensors`
 WHERE (LENGTH(`min_temperature`) OR LENGTH(`max_temperature`) OR LENGTH(`min_humidity`) OR LENGTH(`max_humidity`))
 AND NOT `disabled`;
