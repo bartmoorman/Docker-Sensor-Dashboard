@@ -29,6 +29,13 @@ $(which memcached) \
 sleep 1
 
 $(which su) \
+    -c $(which schedule.php) \
+    -s /bin/bash \
+    www-data &
+
+sleep 1
+
+$(which su) \
     -c $(which notifications.php) \
     -s /bin/bash \
     www-data &

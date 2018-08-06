@@ -3,6 +3,9 @@ class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
   public $memcacheConn;
+  private $queueKey = 2876;
+  public $queueSize = 512;
+  public $queueConn;
   private $pushoverAppToken;
   public $pageLimit = 20;
   public $temperature = ['scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null];
@@ -26,6 +29,8 @@ class Dashboard {
     }
 
     $this->connectMemcache();
+
+    $this->connectQueue();
 
     if ($this->isConfigured()) {
       if ($this->isValidSession()) {
@@ -131,6 +136,13 @@ EOQ;
   private function connectMemcache() {
     if ($this->memcacheConn = new Memcached()) {
       $this->memcacheConn->addServer('localhost', null);
+      return true;
+    }
+    return false;
+  }
+
+  private function connectQueue() {
+    if ($this->queueConn = msg_get_queue($this->queueKey)) {
       return true;
     }
     return false;

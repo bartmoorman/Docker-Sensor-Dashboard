@@ -96,7 +96,6 @@ foreach ($periods as $hours => $period) {
             }
           }
         };
-
         var chart = new Chart($('#chart'), config);
 
         function getReadings() {
