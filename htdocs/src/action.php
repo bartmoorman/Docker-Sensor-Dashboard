@@ -12,6 +12,7 @@ switch ($_REQUEST['func']) {
       $output['success'] = $dashboard->authenticateSession($_REQUEST['username'], $_REQUEST['password']);
       $log['username'] = $_REQUEST['username'];
     } else {
+      header('HTTP/1.1 400 Bad Request');
       $output['success'] = false;
       $output['message'] = 'Missing arguments';
     }
@@ -28,10 +29,12 @@ switch ($_REQUEST['func']) {
         $pushover_sound = !empty($_REQUEST['pushover_sound']) ? $_REQUEST['pushover_sound'] : null;
         $output['success'] = $dashboard->createUser($_REQUEST['username'], $_REQUEST['password'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_priority, $pushover_retry, $pushover_expire, $pushover_sound, $_REQUEST['role']);
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -46,10 +49,12 @@ switch ($_REQUEST['func']) {
         $max_humidity = isset($_REQUEST['max_humidity']) ? $_REQUEST['max_humidity'] : null;
         $output['success'] = $dashboard->createSensor($_REQUEST['name'], $token, $min_temperature, $max_temperature, $min_humidity, $max_humidity);
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'No name supplied';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -68,10 +73,12 @@ switch ($_REQUEST['func']) {
         $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['username'], $password, $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_priority, $pushover_retry, $pushover_expire, $pushover_sound, $_REQUEST['role']);
         $log['user_id'] = $_REQUEST['user_id'];
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -86,10 +93,12 @@ switch ($_REQUEST['func']) {
         $output['success'] = $dashboard->updateSensor($_REQUEST['sensor_id'], $_REQUEST['name'], $_REQUEST['token'], $min_temperature, $max_temperature, $min_humidity, $max_humidity);
         $log['sensor_id'] = $_REQUEST['sensor_id'];
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -102,10 +111,12 @@ switch ($_REQUEST['func']) {
         $log['type'] = $_REQUEST['type'];
         $log['value'] = $_REQUEST['value'];
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -122,10 +133,12 @@ switch ($_REQUEST['func']) {
           $log['value'] = $_REQUEST['value'];
         }
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -135,6 +148,7 @@ switch ($_REQUEST['func']) {
       $output['success'] = $dashboard->putReading($_REQUEST['token'], $_REQUEST['temperature'], $_REQUEST['humidity']);
       $putEvent = false;
     } else {
+      header('HTTP/1.1 400 Bad Request');
       $output['success'] = false;
       $output['message'] = 'Missing arguments';
     }
@@ -150,10 +164,12 @@ switch ($_REQUEST['func']) {
           $log['sensor_id'] = $_REQUEST['sensor_id'];
         }
       } else {
+        header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
         $output['message'] = 'Missing arguments';
       }
     } else {
+      header('HTTP/1.1 403 Forbidden');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }

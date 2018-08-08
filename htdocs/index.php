@@ -110,7 +110,11 @@ foreach ($periods as $hours => $period) {
               }
             })
             .fail(function(jqxhr, textStatus, errorThrown) {
-              console.log(`getReadings failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+              if (jqxhr.status == 403) {
+                location.reload();
+              } else {
+                console.log(`getReadings failed: ${jqxhr.status} (${jqxhr.statusText}), ${textStatus}, ${errorThrown}`);
+              }
             })
             .always(function() {
               timer = setTimeout(getReadings, 30 * 1000);
