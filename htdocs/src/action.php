@@ -162,6 +162,7 @@ switch ($_REQUEST['func']) {
         } else {
           $output['success'] = false;
           $log['sensor_id'] = $_REQUEST['sensor_id'];
+          $log['hours'] = $_REQUEST['hours'];
         }
       } else {
         header('HTTP/1.1 400 Bad Request');
