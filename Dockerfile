@@ -1,4 +1,4 @@
-FROM bmoorman/ubuntu:xenial
+FROM bmoorman/ubuntu:bionic
 
 ENV HTTPD_SERVERNAME="localhost" \
     HTTPD_PORT="2876" \
@@ -6,8 +6,8 @@ ENV HTTPD_SERVERNAME="localhost" \
 
 ARG DEBIAN_FRONTEND="noninteractive"
 
-RUN echo 'deb http://ppa.launchpad.net/certbot/certbot/ubuntu xenial main' > /etc/apt/sources.list.d/certbot.list \
- && echo 'deb-src http://ppa.launchpad.net/certbot/certbot/ubuntu xenial main' >> /etc/apt/sources.list.d/certbot.list \
+RUN echo 'deb http://ppa.launchpad.net/certbot/certbot/ubuntu bionic main' > /etc/apt/sources.list.d/certbot.list \
+ && echo 'deb-src http://ppa.launchpad.net/certbot/certbot/ubuntu bionic main' >> /etc/apt/sources.list.d/certbot.list \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 75BCA694 \
  && apt-get update \
  && apt-get install --yes --no-install-recommends \
