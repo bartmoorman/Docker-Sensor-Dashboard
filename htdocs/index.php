@@ -19,7 +19,7 @@ include_once('header.php');
     <canvas id='chart'></canvas>
     <nav class='navbar text-center'>
       <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor_id' data-storage='sensor_id'>
-        <option value='0'>Sensor</option>
+        <option value='0'>-- Sensor --</option>
 <?php
 foreach ($dashboard->getObjects('sensors') as $sensor) {
   echo "        <option value='{$sensor['sensor_id']}'>{$sensor['name']}</option>" . PHP_EOL;
@@ -27,7 +27,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 ?>
       </select>
       <select class='btn btn-sm btn-outline-success mr-auto id-hours' data-storage='hours'>
-        <option value='0'>Period</option>
+        <option value='0'>-- Period --</option>
 <?php
 $periods = [
   1 => '1 hour',
