@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `events` (
 CREATE TABLE IF NOT EXISTS `sensors` (
   `sensor_id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `name` TEXT NOT NULL,
-  `token` TEXT NOT NULL UNIQUE,
+  `key` TEXT NOT NULL UNIQUE,
   `min_temperature` NUMERIC,
   `max_temperature` NUMERIC,
   `min_humidity` NUMERIC,
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS `readings` (
 CREATE TABLE IF NOT EXISTS `apps` (
   `app_id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `name` TEXT NOT NULL,
-  `key` TEXT NOT NULL UNIQUE,
+  `token` TEXT NOT NULL UNIQUE,
   `begin` INTEGER,
   `end` INTEGER,
   `disabled` INTEGER NOT NULL DEFAULT 0
@@ -217,11 +217,11 @@ EOQ;
       case 'user_id':
         $table = 'users';
         break;
-      case 'token':
+      case 'key':
       case 'sensor_id':
         $table = 'sensors';
         break;
-      case 'key':
+      case 'token':
       case 'app_id':
         $table = 'apps';
         break;
@@ -292,12 +292,12 @@ EOQ;
     return false;
   }
 
-  public function createSensor($name, $token = null, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
-    $token = !$token ? bin2hex(random_bytes(8)) : $this->dbConn->escapeString($token);
+  public function createSensor($name, $key = null, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
+    $key = !$key ? bin2hex(random_bytes(8)) : $this->dbConn->escapeString($key);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `sensors`
-WHERE `token` = '{$token}';
+WHERE `key` = '{$key}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
@@ -307,8 +307,8 @@ EOQ;
       $max_humidity = $this->dbConn->escapeString($max_humidity);
       $query = <<<EOQ
 INSERT
-INTO `sensors` (`name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`)
-VALUES ('{$name}', '{$token}', '{$min_temperature}', '{$max_temperature}', '{$min_humidity}', '{$max_humidity}');
+INTO `sensors` (`name`, `key`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`)
+VALUES ('{$name}', '{$key}', '{$min_temperature}', '{$max_temperature}', '{$min_humidity}', '{$max_humidity}');
 EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
@@ -317,12 +317,12 @@ EOQ;
     return false;
   }
 
-  public function createApp($name, $key = null, $begin = null, $end = null) {
-    $key = !$key ? bin2hex(random_bytes(8)) : $this->dbConn->escapeString($key);
+  public function createApp($name, $token = null, $begin = null, $end = null) {
+    $token = !$token ? bin2hex(random_bytes(8)) : $this->dbConn->escapeString($token);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `apps`
-WHERE `key` = '{$key}';
+WHERE `token` = '{$token}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
@@ -330,8 +330,8 @@ EOQ;
       $end = $this->dbConn->escapeString($end);
       $query = <<<EOQ
 INSERT
-INTO `apps` (`name`, `key`, `begin`, `end`)
-VALUES ('{$name}', '{$key}', STRFTIME('%s','{$begin}',) STRFTIME('%s','{$end}'));
+INTO `apps` (`name`, `token`, `begin`, `end`)
+VALUES ('{$name}', '{$token}', STRFTIME('%s','{$begin}',) STRFTIME('%s','{$end}'));
 EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
@@ -389,14 +389,14 @@ EOQ;
     return false;
   }
 
-  public function updateSensor($sensor_id, $name, $token, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
+  public function updateSensor($sensor_id, $name, $key, $min_temperature = null, $max_temperature = null, $min_humidity = null, $max_humidity = null) {
     $sensor_id = $this->dbConn->escapeString($sensor_id);
-    $token = $this->dbConn->escapeString($token);
+    $key = $this->dbConn->escapeString($key);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `sensors`
 WHERE `sensor_id` != '{$sensor_id}'
-AND `token` = '{$token}';
+AND `key` = '{$key}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
@@ -408,7 +408,7 @@ EOQ;
 UPDATE `sensors`
 SET
   `name` = '{$name}',
-  `token` = '{$token}',
+  `key` = '{$key}',
   `min_temperature` = '{$min_temperature}',
   `max_temperature` = '{$max_temperature}',
   `min_humidity` = '{$min_humidity}',
@@ -422,14 +422,14 @@ EOQ;
     return false;
   }
 
-  public function updateApp($app_id, $name, $key, $begin, $end) {
+  public function updateApp($app_id, $name, $token, $begin, $end) {
     $app_id = $this->dbConn->escapeString($app_id);
-    $key = $this->dbConn->escapeString($key);
+    $token = $this->dbConn->escapeString($token);
     $query = <<<EOQ
 SELECT COUNT(*)
 FROM `apps`
 WHERE `app_id` != '{$app_id}'
-AND `key` = '{$key}';
+AND `token` = '{$token}';
 EOQ;
     if (!$this->dbConn->querySingle($query)) {
       $name = $this->dbConn->escapeString($name);
@@ -439,7 +439,7 @@ EOQ;
 UPDATE `apps`
 SET
   `name` = '{$name}',
-  `key` = '{$key}',
+  `token` = '{$token}',
   `begin` = STRFTIME('%s', '{$begin}'),
   `end` = STRFTIME('%s', '{$end}')
 WHERE `app_id` = '{$app_id}';
@@ -462,12 +462,12 @@ EOQ;
         $table = 'users';
         $extra_table = 'events';
         break;
-      case 'token':
+      case 'key':
       case 'sensor_id':
         $table = 'sensors';
         $extra_table = 'readings';
         break;
-      case 'key':
+      case 'token':
       case 'app_id':
         $table = 'apps';
         $extra_table = 'calls';
@@ -516,14 +516,14 @@ EOQ;
         break;
       case 'sensors':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `disabled`
+SELECT `sensor_id`, `name`, `key`, IFNULL(NULLIF(`min_temperature`, ''), '-') AS `min_temperature`, IFNULL(NULLIF(`max_temperature`, ''), '-') AS `max_temperature`, IFNULL(NULLIF(`min_humidity`, ''), '-') AS `min_humidity`, IFNULL(NULLIF(`max_humidity`, ''), '-') AS `max_humidity`, `disabled`
 FROM `sensors`
 ORDER BY `name`;
 EOQ;
         break;
       case 'apps':
         $query = <<<EOQ
-SELECT `app_id`, `name`, `key`, `begin`, `end`, `disabled`
+SELECT `app_id`, `name`, `token`, `begin`, `end`, `disabled`
 FROM `apps`
 ORDER BY `name`;
 EOQ;
@@ -551,14 +551,14 @@ EOQ;
         break;
       case 'sensor':
         $query = <<<EOQ
-SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
+SELECT `sensor_id`, `name`, `key`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
 FROM `sensors`
 WHERE `sensor_id` = '{$value}';
 EOQ;
         break;
       case 'app':
         $query = <<<EOQ
-SELECT `app_id`, `name`, `key`, STRFTIME('%Y-%m-%dT%H:%M', `begin`, 'unixepoch') AS `begin`, STRFTIME('%Y-%m-%dT%H:%M', `end`, 'unixepoch') AS `end`, `disabled`
+SELECT `app_id`, `name`, `token`, STRFTIME('%Y-%m-%dT%H:%M', `begin`, 'unixepoch') AS `begin`, STRFTIME('%Y-%m-%dT%H:%M', `end`, 'unixepoch') AS `end`, `disabled`
 FROM `apps`
 WHERE `app_id` = '{$value}';
 EOQ;
@@ -629,13 +629,13 @@ EOQ;
     return $temperature;
   }
 
-  public function putReading($token, $temperature, $humidity) {
-    $token = $this->dbConn->escapeString($token);
-    if ($this->isValidObject('token', $token)) {
+  public function putReading($key, $temperature, $humidity) {
+    $key = $this->dbConn->escapeString($key);
+    if ($this->isValidObject('key', $key)) {
       $query = <<<EOQ
 SELECT `sensor_id`
 FROM `sensors`
-WHERE `token` = '{$token}';
+WHERE `key` = '{$key}';
 EOQ;
       if ($sensor_id = $this->dbConn->querySingle($query)) {
         $temperature = $this->dbConn->escapeString($temperature);

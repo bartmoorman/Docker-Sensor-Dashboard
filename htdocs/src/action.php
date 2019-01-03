@@ -42,12 +42,12 @@ switch ($_REQUEST['func']) {
   case 'createSensor':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
       if (!empty($_REQUEST['name'])) {
-        $token = isset($_REQUEST['token']) ? $_REQUEST['token'] : null;
+        $key = isset($_REQUEST['key']) ? $_REQUEST['key'] : null;
         $min_temperature = isset($_REQUEST['min_temperature']) ? $_REQUEST['min_temperature'] : null;
         $max_temperature = isset($_REQUEST['max_temperature']) ? $_REQUEST['max_temperature'] : null;
         $min_humidity = isset($_REQUEST['min_humidity']) ? $_REQUEST['min_humidity'] : null;
         $max_humidity = isset($_REQUEST['max_humidity']) ? $_REQUEST['max_humidity'] : null;
-        $output['success'] = $dashboard->createSensor($_REQUEST['name'], $token, $min_temperature, $max_temperature, $min_humidity, $max_humidity);
+        $output['success'] = $dashboard->createSensor($_REQUEST['name'], $key, $min_temperature, $max_temperature, $min_humidity, $max_humidity);
       } else {
         header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
@@ -62,10 +62,10 @@ switch ($_REQUEST['func']) {
   case 'createApp':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
       if (!empty($_REQUEST['name'])) {
-        $key = isset($_REQUEST['key']) ? $_REQUEST['key'] : null;
+        $token = isset($_REQUEST['token']) ? $_REQUEST['token'] : null;
         $begin = !empty($_REQUEST['begin']) ? $_REQUEST['begin'] : null;
         $end = !empty($_REQUEST['end']) ? $_REQUEST['end'] : null;
-        $output['success'] = $dashboard->createApp($_REQUEST['name'], $key, $begin, $end);
+        $output['success'] = $dashboard->createApp($_REQUEST['name'], $token, $begin, $end);
       } else {
         header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
@@ -103,12 +103,12 @@ switch ($_REQUEST['func']) {
     break;
   case 'updateSensor':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['name']) && !empty($_REQUEST['token'])) {
+      if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['name']) && !empty($_REQUEST['key'])) {
         $min_temperature = isset($_REQUEST['min_temperature']) ? $_REQUEST['min_temperature'] : null;
         $max_temperature = isset($_REQUEST['max_temperature']) ? $_REQUEST['max_temperature'] : null;
         $min_humidity = isset($_REQUEST['min_humidity']) ? $_REQUEST['min_humidity'] : null;
         $max_humidity = isset($_REQUEST['max_humidity']) ? $_REQUEST['max_humidity'] : null;
-        $output['success'] = $dashboard->updateSensor($_REQUEST['sensor_id'], $_REQUEST['name'], $_REQUEST['token'], $min_temperature, $max_temperature, $min_humidity, $max_humidity);
+        $output['success'] = $dashboard->updateSensor($_REQUEST['sensor_id'], $_REQUEST['name'], $_REQUEST['key'], $min_temperature, $max_temperature, $min_humidity, $max_humidity);
         $log['sensor_id'] = $_REQUEST['sensor_id'];
       } else {
         header('HTTP/1.1 400 Bad Request');
@@ -123,10 +123,10 @@ switch ($_REQUEST['func']) {
     break;
   case 'updateApp':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
-      if (!empty($_REQUEST['app_id']) && !empty($_REQUEST['name']) && !empty($_REQUEST['key'])) {
+      if (!empty($_REQUEST['app_id']) && !empty($_REQUEST['name']) && !empty($_REQUEST['token'])) {
         $begin = !empty($_REQUEST['begin']) ? $_REQUEST['begin'] : null;
         $end = !empty($_REQUEST['end']) ? $_REQUEST['end'] : null;
-        $output['success'] = $dashboard->updateApp($_REQUEST['app_id'], $_REQUEST['name'], $_REQUEST['key'], $begin, $end);
+        $output['success'] = $dashboard->updateApp($_REQUEST['app_id'], $_REQUEST['name'], $_REQUEST['token'], $begin, $end);
         $log['app_id'] = $_REQUEST['app_id'];
       } else {
         header('HTTP/1.1 400 Bad Request');
@@ -180,8 +180,8 @@ switch ($_REQUEST['func']) {
     }
     break;
   case 'putReading':
-    if (!empty($_REQUEST['token']) && !empty($_REQUEST['temperature']) && !empty($_REQUEST['humidity'])) {
-      $output['success'] = $dashboard->putReading($_REQUEST['token'], $_REQUEST['temperature'], $_REQUEST['humidity']);
+    if (!empty($_REQUEST['key']) && !empty($_REQUEST['temperature']) && !empty($_REQUEST['humidity'])) {
+      $output['success'] = $dashboard->putReading($_REQUEST['key'], $_REQUEST['temperature'], $_REQUEST['humidity']);
       $putEvent = false;
     } else {
       header('HTTP/1.1 400 Bad Request');
@@ -190,7 +190,7 @@ switch ($_REQUEST['func']) {
     }
     break;
   case 'getReadings':
-    if ($dashboard->isValidSession() || (array_key_exists('key', $_REQUEST) && $dashboard->isValidObject('key', $_REQUEST['key']))) {
+    if ($dashboard->isValidSession() || (array_key_exists('token', $_REQUEST) && $dashboard->isValidObject('token', $_REQUEST['token']))) {
       if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['hours'])) {
         if ($output['data'] = $dashboard->getReadings($_REQUEST['sensor_id'], $_REQUEST['hours'])) {
           $output['success'] = true;

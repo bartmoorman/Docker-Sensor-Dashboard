@@ -61,8 +61,8 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                   <input class='form-control' id='name' type='text' name='name' required>
                 </div>
                 <div class='form-group col'>
-                  <label>Access Token <sup class='text-danger id-required' data-toggle='tooltip' title='Required'>*</sup></label>
-                  <input class='form-control id-token' id='token' type='text' name='token' minlength='16' maxlength='16' pattern='[A-Za-z0-9]{16}' required>
+                  <label>Access Key <sup class='text-danger id-required' data-toggle='tooltip' title='Required'>*</sup></label>
+                  <input class='form-control id-key' id='key' type='text' name='key' minlength='16' maxlength='16' pattern='[A-Za-z0-9]{16}' required>
                 </div>
               </div>
               <div class='form-row'>
@@ -127,7 +127,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('h5.modal-title').text('Add Sensor');
           $('form').removeData('sensor_id').data('func', 'createSensor').trigger('reset');
           $('sup.id-required').addClass('d-none');
-          $('input.id-token').prop('required', false).attr('placeholder', 'Will be generated if empty');
+          $('input.id-key').prop('required', false).attr('placeholder', 'Will be generated if empty');
           $('button.id-modify').addClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-info').addClass('btn-success').text('Add');
           $('div.id-modal').modal('toggle');
@@ -137,7 +137,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
           $('h5.modal-title').text('Sensor Details');
           $('form').removeData('sensor_id').data('func', 'updateSensor').trigger('reset');
           $('sup.id-required').removeClass('d-none');
-          $('input.id-token').removeAttr('placeholder').prop('required', true);
+          $('input.id-key').removeAttr('placeholder').prop('required', true);
           $('button.id-modify').removeClass('d-none').removeData('sensor_id');
           $('button.id-submit').removeClass('btn-success').addClass('btn-info').text('Save');
           $.get('src/action.php', {"func": "getObjectDetails", "type": "sensor", "value": $(this).data('sensor_id')})
@@ -146,7 +146,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
                 sensor = data.data;
                 $('form').data('sensor_id', sensor.sensor_id);
                 $('#name').val(sensor.name);
-                $('#token').val(sensor.token);
+                $('#key').val(sensor.key);
                 $('#min_temperature').val(sensor.min_temperature);
                 $('#max_temperature').val(sensor.max_temperature);
                 $('#min_humidity').val(sensor.min_humidity);
@@ -177,7 +177,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.post('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "token": $('#token').val(), "min_temperature": $('#min_temperature').val(), "max_temperature": $('#max_temperature').val(), "min_humidity": $('#min_humidity').val(), "max_humidity": $('#max_humidity').val()})
+          $.post('src/action.php', {"func": $(this).data('func'), "sensor_id": $(this).data('sensor_id'), "name": $('#name').val(), "key": $('#key').val(), "min_temperature": $('#min_temperature').val(), "max_temperature": $('#max_temperature').val(), "min_humidity": $('#min_humidity').val(), "max_humidity": $('#max_humidity').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();
