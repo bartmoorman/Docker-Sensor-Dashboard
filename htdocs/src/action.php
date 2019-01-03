@@ -59,6 +59,24 @@ switch ($_REQUEST['func']) {
       $output['message'] = 'Unauthorized';
     }
     break;
+  case 'createApp':
+    if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
+      if (!empty($_REQUEST['name'])) {
+        $key = isset($_REQUEST['key']) ? $_REQUEST['key'] : null;
+        $begin = !empty($_REQUEST['begin']) ? $_REQUEST['begin'] : null;
+        $end = !empty($_REQUEST['end']) ? $_REQUEST['end'] : null;
+        $output['success'] = $dashboard->createApp($_REQUEST['name'], $key, $begin, $end);
+      } else {
+        header('HTTP/1.1 400 Bad Request');
+        $output['success'] = false;
+        $output['message'] = 'No name supplied';
+      }
+    } else {
+      header('HTTP/1.1 403 Forbidden');
+      $output['success'] = false;
+      $output['message'] = 'Unauthorized';
+    }
+    break;
   case 'updateUser':
     if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
       if (!empty($_REQUEST['user_id']) && !empty($_REQUEST['username']) && !empty($_REQUEST['first_name']) && !empty($_REQUEST['role'])) {
@@ -92,6 +110,24 @@ switch ($_REQUEST['func']) {
         $max_humidity = isset($_REQUEST['max_humidity']) ? $_REQUEST['max_humidity'] : null;
         $output['success'] = $dashboard->updateSensor($_REQUEST['sensor_id'], $_REQUEST['name'], $_REQUEST['token'], $min_temperature, $max_temperature, $min_humidity, $max_humidity);
         $log['sensor_id'] = $_REQUEST['sensor_id'];
+      } else {
+        header('HTTP/1.1 400 Bad Request');
+        $output['success'] = false;
+        $output['message'] = 'Missing arguments';
+      }
+    } else {
+      header('HTTP/1.1 403 Forbidden');
+      $output['success'] = false;
+      $output['message'] = 'Unauthorized';
+    }
+    break;
+  case 'updateApp':
+    if ($dashboard->isValidSession() && $dashboard->isAdmin()) {
+      if (!empty($_REQUEST['app_id']) && !empty($_REQUEST['name']) && !empty($_REQUEST['key'])) {
+        $begin = !empty($_REQUEST['begin']) ? $_REQUEST['begin'] : null;
+        $end = !empty($_REQUEST['end']) ? $_REQUEST['end'] : null;
+        $output['success'] = $dashboard->updateApp($_REQUEST['app_id'], $_REQUEST['name'], $_REQUEST['key'], $begin, $end);
+        $log['app_id'] = $_REQUEST['app_id'];
       } else {
         header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
@@ -154,7 +190,7 @@ switch ($_REQUEST['func']) {
     }
     break;
   case 'getReadings':
-    if ($dashboard->isValidSession()) {
+    if ($dashboard->isValidSession() || (array_key_exists('key', $_REQUEST) && $dashboard->isValidObject('key', $_REQUEST['key']))) {
       if (!empty($_REQUEST['sensor_id']) && !empty($_REQUEST['hours'])) {
         if ($output['data'] = $dashboard->getReadings($_REQUEST['sensor_id'], $_REQUEST['hours'])) {
           $output['success'] = true;

@@ -56,7 +56,6 @@ class Dashboard {
         $this->temperature['key'] = '°F';
         $this->temperature['min'] = -40;
         $this->temperature['max'] = 176;
-        $this->temperature['buffer'] = 2.16;
         break;
       case 'k':
       case 'kelvin':
@@ -64,15 +63,15 @@ class Dashboard {
         $this->temperature['key'] = 'K';
         $this->temperature['min'] = 233.15;
         $this->temperature['max'] = 353.15;
-        $this->temperature['buffer'] = 1.2;
         break;
       default:
         $this->temperature['scale'] = 'celsius';
         $this->temperature['key'] = '°C';
         $this->temperature['min'] = -40;
         $this->temperature['max'] = 80;
-        $this->temperature['buffer'] = 1.2;
     }
+
+    $this->temperature['buffer'] = ($this->temperature['max'] - $this->temperature['min']) / 100;
   }
 
   private function connectDb() {
@@ -125,6 +124,22 @@ CREATE TABLE IF NOT EXISTS `readings` (
   `sensor_id` INTEGER NOT NULL,
   `temperature` NUMERIC,
   `humidity` NUMERIC
+);
+CREATE TABLE IF NOT EXISTS `apps` (
+  `app_id` INTEGER PRIMARY KEY AUTOINCREMENT,
+  `name` TEXT NOT NULL,
+  `key` TEXT NOT NULL UNIQUE,
+  `begin` INTEGER,
+  `end` INTEGER,
+  `disabled` INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS `calls` (
+  `call_id` INTEGER PRIMARY KEY AUTOINCREMENT,
+  `date` INTEGER DEFAULT (STRFTIME('%s', 'now')),
+  `app_id` INTEGER NOT NULL,
+  `action` TEXT,
+  `message` BLOB,
+  `remote_addr` INTEGER
 );
 EOQ;
     if ($this->dbConn->exec($query)) {
@@ -200,6 +215,10 @@ EOQ;
       case 'token':
       case 'sensor_id':
         $table = 'sensors';
+        break;
+      case 'key':
+      case 'app_id':
+        $table = 'apps';
         break;
     }
     $query = <<<EOQ
@@ -293,6 +312,29 @@ EOQ;
     return false;
   }
 
+  public function createApp($name, $key = null, $begin = null, $end = null) {
+    $key = !$key ? bin2hex(random_bytes(8)) : $this->dbConn->escapeString($key);
+    $query = <<<EOQ
+SELECT COUNT(*)
+FROM `apps`
+WHERE `key` = '{$key}';
+EOQ;
+    if (!$this->dbConn->querySingle($query)) {
+      $name = $this->dbConn->escapeString($name);
+      $begin = $this->dbConn->escapeString($begin);
+      $end = $this->dbConn->escapeString($end);
+      $query = <<<EOQ
+INSERT
+INTO `apps` (`name`, `key`, `begin`, `end`)
+VALUES ('{$name}', '{$key}', STRFTIME('%s','{$begin}',) STRFTIME('%s','{$end}'));
+EOQ;
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public function updateUser($user_id, $username, $password = null, $first_name, $last_name = null, $pushover_user = null, $pushover_token = null, $pushover_priority = null, $pushover_retry = null, $pushover_expire = null, $pushover_sound = null, $role) {
     $user_id = $this->dbConn->escapeString($user_id);
     $username = $this->dbConn->escapeString($username);
@@ -375,6 +417,35 @@ EOQ;
     return false;
   }
 
+  public function updateApp($app_id, $name, $key, $begin, $end) {
+    $app_id = $this->dbConn->escapeString($app_id);
+    $key = $this->dbConn->escapeString($key);
+    $query = <<<EOQ
+SELECT COUNT(*)
+FROM `apps`
+WHERE `app_id` != '{$app_id}'
+AND `key` = '{$key}';
+EOQ;
+    if (!$this->dbConn->querySingle($query)) {
+      $name = $this->dbConn->escapeString($name);
+      $begin = $this->dbConn->escapeString($begin);
+      $end = $this->dbConn->escapeString($end);
+      $query = <<<EOQ
+UPDATE `apps`
+SET
+  `name` = '{$name}',
+  `key` = '{$key}',
+  `begin` = STRFTIME('%s', '{$begin}'),
+  `end` = STRFTIME('%s', '{$end}')
+WHERE `app_id` = '{$app_id}';
+EOQ;
+      if ($this->dbConn->exec($query)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public function modifyObject($action, $type, $value, $extra_type = null, $extra_value = null) {
     $type = $this->dbConn->escapeString($type);
     $value = $this->dbConn->escapeString($value);
@@ -390,6 +461,11 @@ EOQ;
       case 'sensor_id':
         $table = 'sensors';
         $extra_table = 'readings';
+        break;
+      case 'key':
+      case 'app_id':
+        $table = 'apps';
+        $extra_table = 'calls';
         break;
     }
     switch ($action) {
@@ -440,6 +516,13 @@ FROM `sensors`
 ORDER BY `name`;
 EOQ;
         break;
+      case 'apps':
+        $query = <<<EOQ
+SELECT `app_id`, `name`, `key`, `begin`, `end`, `disabled`
+FROM `apps`
+ORDER BY `name`;
+EOQ;
+        break;
     }
     if ($objects = $this->dbConn->query($query)) {
       $output = [];
@@ -466,6 +549,13 @@ EOQ;
 SELECT `sensor_id`, `name`, `token`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`, `disabled`
 FROM `sensors`
 WHERE `sensor_id` = '{$value}';
+EOQ;
+        break;
+      case 'app':
+        $query = <<<EOQ
+SELECT `app_id`, `name`, `key`, STRFTIME('%Y-%m-%dT%H:%M', `begin`, 'unixepoch') AS `begin`, STRFTIME('%Y-%m-%dT%H:%M', `end`, 'unixepoch') AS `end`, `disabled`
+FROM `apps`
+WHERE `app_id` = '{$value}';
 EOQ;
         break;
     }
