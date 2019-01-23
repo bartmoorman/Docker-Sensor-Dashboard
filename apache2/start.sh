@@ -21,13 +21,6 @@ if [ -f ${pidfile} ]; then
     fi
 fi
 
-$(which memcached) \
-    -l 127.0.0.1 \
-    -d \
-    -u memcache
-
-sleep 1
-
 $(which su) \
     -c $(which schedule.php) \
     -s /bin/bash \
@@ -39,6 +32,8 @@ $(which su) \
     -c $(which notifications.php) \
     -s /bin/bash \
     www-data &
+
+sleep 1
 
 exec $(which apache2ctl) \
     -D FOREGROUND \

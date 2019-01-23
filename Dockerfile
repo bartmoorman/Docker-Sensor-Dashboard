@@ -15,7 +15,6 @@ RUN echo 'deb http://ppa.launchpad.net/certbot/certbot/ubuntu bionic main' > /et
     certbot \
     curl \
     libapache2-mod-php \
-    memcached \
     php-curl \
     php-memcached \
     php-sqlite3 \
