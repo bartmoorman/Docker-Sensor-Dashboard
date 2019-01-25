@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS `readings` (
   `temperature` NUMERIC,
   `humidity` NUMERIC
 );
+CREATE INDEX `idx_readings_sensor_id_date` ON `readings` (`sensor_id`, `date`);
 CREATE TABLE IF NOT EXISTS `apps` (
   `app_id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `name` TEXT NOT NULL,
