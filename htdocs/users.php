@@ -25,6 +25,8 @@ include_once('header.php');
             <th>Username</th>
             <th>User Name</th>
             <th>Role</th>
+            <th>Begin</th>
+            <th>End</th>
             <th>Notifications</th>
           </tr>
         </thead>
@@ -32,6 +34,8 @@ include_once('header.php');
 <?php
 foreach ($dashboard->getObjects('users') as $user) {
   $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
+  $begin = !empty($user['begin']) ? date('m/d/Y, h:i A', $user['begin']) : '&infin;';
+  $end = !empty($user['end']) ? date('m/d/Y, h:i A', $user['end']) : '&infin;';
   $tableClass = $user['disabled'] ? 'text-warning' : 'table-default';
   echo "          <tr class='{$tableClass}'>" . PHP_EOL;
   echo "            <td><button type='button' class='btn btn-sm btn-outline-info id-details' data-user_id='{$user['user_id']}'>Details</button></td>" . PHP_EOL;
@@ -39,6 +43,8 @@ foreach ($dashboard->getObjects('users') as $user) {
   echo "            <td>{$user['username']}</td>" . PHP_EOL;
   echo "            <td>{$user_name}</td>" . PHP_EOL;
   echo "            <td>{$user['role']}</td>" . PHP_EOL;
+  echo "            <td>{$begin}</td>" . PHP_EOL;
+  echo "            <td>{$end}</td>" . PHP_EOL;
   if (!empty($user['pushover_user']) && !empty($user['pushover_token'])) {
     echo "            <td><input type='checkbox' checked disabled></td>" . PHP_EOL;
   } else {
@@ -85,6 +91,16 @@ foreach ($dashboard->getObjects('users') as $user) {
                     <option value='user'>user</option>
                     <option value='admin'>admin</option>
                   </select>
+                </div>
+              </div>
+              <div class='form-row'>
+                <div class='form-group col'>
+                  <label>Begin</label>
+                  <input class='form-control' id='begin' type='datetime-local' name='begin'>
+                </div>
+                <div class='form-group col'>
+                  <label>End</label>
+                  <input class='form-control' id='end' type='datetime-local' name='end'>
                 </div>
               </div>
               <div class='form-row'>
@@ -185,6 +201,8 @@ for ($priority = -2; $priority <= 2; $priority++) {
                 $('#pushover_expire').val(user.pushover_expire);
                 $('#pushover_sound').val(user.pushover_sound);
                 $('#role').val(user.role);
+                $('#begin').val(user.begin);
+                $('#end').val(user.end);
                 $('button.id-modify.id-volatile').data('action', user.disabled ? 'enable' : 'disable').text(user.disabled ? 'Enable' : 'Disable');
                 $('button.id-modify').data('user_id', user.user_id);
                 $('div.id-modal').modal('toggle');
@@ -215,7 +233,7 @@ for ($priority = -2; $priority <= 2; $priority++) {
 
         $('form').submit(function(e) {
           e.preventDefault();
-          $.post('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "username": $('#username').val(), "password": $('#password').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "pushover_priority": $('#pushover_priority').val(), "pushover_retry": $('#pushover_retry').val(), "pushover_expire": $('#pushover_expire').val(), "pushover_sound": $('#pushover_sound').val(), "role": $('#role').val()})
+          $.post('src/action.php', {"func": $(this).data('func'), "user_id": $(this).data('user_id'), "username": $('#username').val(), "password": $('#password').val(), "first_name": $('#first_name').val(), "last_name": $('#last_name').val(), "pushover_user": $('#pushover_user').val(), "pushover_token": $('#pushover_token').val(), "pushover_priority": $('#pushover_priority').val(), "pushover_retry": $('#pushover_retry').val(), "pushover_expire": $('#pushover_expire').val(), "pushover_sound": $('#pushover_sound').val(), "role": $('#role').val(), "begin": $('#begin').val(), "end": $('#end').val()})
             .done(function(data) {
               if (data.success) {
                 location.reload();

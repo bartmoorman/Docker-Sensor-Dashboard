@@ -27,7 +27,9 @@ switch ($_REQUEST['func']) {
         $pushover_retry = isset($_REQUEST['pushover_retry']) ? $_REQUEST['pushover_retry'] : null;
         $pushover_expire = isset($_REQUEST['pushover_expire']) ? $_REQUEST['pushover_expire'] : null;
         $pushover_sound = !empty($_REQUEST['pushover_sound']) ? $_REQUEST['pushover_sound'] : null;
-        $output['success'] = $dashboard->createUser($_REQUEST['username'], $_REQUEST['password'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_priority, $pushover_retry, $pushover_expire, $pushover_sound, $_REQUEST['role']);
+        $begin = !empty($_REQUEST['begin']) ? $_REQUEST['begin'] : null;
+        $end = !empty($_REQUEST['end']) ? $_REQUEST['end'] : null;
+        $output['success'] = $dashboard->createUser($_REQUEST['username'], $_REQUEST['password'], $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_priority, $pushover_retry, $pushover_expire, $pushover_sound, $_REQUEST['role'], $begin, $end);
       } else {
         header('HTTP/1.1 400 Bad Request');
         $output['success'] = false;
@@ -88,7 +90,9 @@ switch ($_REQUEST['func']) {
         $pushover_retry = isset($_REQUEST['pushover_retry']) ? $_REQUEST['pushover_retry'] : null;
         $pushover_expire = isset($_REQUEST['pushover_expire']) ? $_REQUEST['pushover_expire'] : null;
         $pushover_sound = !empty($_REQUEST['pushover_sound']) ? $_REQUEST['pushover_sound'] : null;
-        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['username'], $password, $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_priority, $pushover_retry, $pushover_expire, $pushover_sound, $_REQUEST['role']);
+        $begin = !empty($_REQUEST['begin']) ? $_REQUEST['begin'] : null;
+        $end = !empty($_REQUEST['end']) ? $_REQUEST['end'] : null;
+        $output['success'] = $dashboard->updateUser($_REQUEST['user_id'], $_REQUEST['username'], $password, $_REQUEST['first_name'], $last_name, $pushover_user, $pushover_token, $pushover_priority, $pushover_retry, $pushover_expire, $pushover_sound, $_REQUEST['role'], $begin, $end);
         $log['user_id'] = $_REQUEST['user_id'];
       } else {
         header('HTTP/1.1 400 Bad Request');
