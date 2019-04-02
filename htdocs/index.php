@@ -118,7 +118,7 @@ foreach ($periods as $hours => $period) {
               }
             })
             .always(function() {
-              timer = setTimeout(getReadings, 30 * 1000);
+              timer = setTimeout(getReadings, 5 * 1000);
             });
         };
 
