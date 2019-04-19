@@ -762,7 +762,7 @@ EOQ;
     return false;
   }
 
-  public function getSensorNotifications() {
+  public function getActiveSensorNotifications() {
     $query = <<<EOQ
 SELECT `sensor_id`, `name`, `min_temperature`, `max_temperature`, `min_humidity`, `max_humidity`
 FROM `sensors`

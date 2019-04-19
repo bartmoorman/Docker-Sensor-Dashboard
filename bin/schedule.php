@@ -4,7 +4,7 @@ require_once('/var/www/html/inc/dashboard.class.php');
 $dashboard = new Dashboard(false, false, false, false);
 
 while (true) {
-  foreach ($dashboard->getSensorNotifications() as $sensor) {
+  foreach ($dashboard->getActiveSensorNotifications() as $sensor) {
     if ($reading = $dashboard->getReadingsAverage($sensor['sensor_id'], 5)) {
       if ($reading['count']) {
         if ($dashboard->memcacheConn->get(sprintf('notifiedInsufficientData-%u', $sensor['sensor_id']))) {
