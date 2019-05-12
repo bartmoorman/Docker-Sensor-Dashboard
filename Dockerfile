@@ -2,6 +2,7 @@ FROM bmoorman/ubuntu:bionic
 
 ENV HTTPD_SERVERNAME="localhost" \
     HTTPD_PORT="2876" \
+    MEMCACHED_HOST="memcached" \
     TEMPERATURE_SCALE="Fahrenheit"
 
 ARG DEBIAN_FRONTEND="noninteractive"

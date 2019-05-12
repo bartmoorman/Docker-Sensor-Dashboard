@@ -2,7 +2,8 @@
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
-  public $memcacheConn;
+  public $memcachedHost;
+  public $memcachedConn;
   private $queueKey = 2876;
   public $queueSize = 512;
   public $queueConn;
@@ -30,7 +31,7 @@ class Dashboard {
       $this->initDb();
     }
 
-    $this->connectMemcache();
+    $this->connectMemcached();
 
     $this->connectQueue();
 
@@ -160,9 +161,9 @@ EOQ;
     return false;
   }
 
-  private function connectMemcache() {
-    if ($this->memcacheConn = new Memcached()) {
-      $this->memcacheConn->addServer('memcached', 11211);
+  private function connectMemcached() {
+    if ($this->memcachedConn = new Memcached()) {
+      $this->memcachedConn->addServer($this->memcachedHost, 11211);
       return true;
     }
     return false;
@@ -749,13 +750,13 @@ EOQ;
   }
 
   public function getSounds() {
-    if ($result = $this->memcacheConn->get('pushoverSounds')) {
+    if ($result = $this->memcachedConn->get('pushoverSounds')) {
       return json_decode($result)->sounds;
     } else {
       $ch = curl_init("https://api.pushover.net/1/sounds.json?token={$this->pushoverAppToken}");
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
       if (($result = curl_exec($ch)) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
-        $this->memcacheConn->set('pushoverSounds', $result, 60 * 60 * 24);
+        $this->memcachedConn->set('pushoverSounds', $result, 60 * 60 * 24);
         return json_decode($result)->sounds;
       }
     }
