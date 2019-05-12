@@ -2,7 +2,7 @@
 class Dashboard {
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
-  public $memcachedHost;
+  private $memcachedHost;
   public $memcachedConn;
   private $queueKey = 2876;
   public $queueSize = 512;
@@ -31,6 +31,7 @@ class Dashboard {
       $this->initDb();
     }
 
+    $this->memcachedHost = getenv('MEMCACHED_HOST');
     $this->connectMemcached();
 
     $this->connectQueue();
