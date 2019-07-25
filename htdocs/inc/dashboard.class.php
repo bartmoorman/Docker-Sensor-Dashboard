@@ -8,6 +8,7 @@ class Dashboard {
   public $queueSize = 512;
   public $queueConn;
   private $pushoverAppToken;
+  public $serverURL;
   public $pageLimit = 20;
   public $temperature = ['scale' => null, 'key' => null, 'min' => null, 'max' => null, 'buffer' => null];
 
@@ -19,7 +20,7 @@ class Dashboard {
       'gc_divisor' => 1000,
       'gc_maxlifetime' => 60 * 60 * 24 * 7,
       'cookie_lifetime' => 60 * 60 * 24 * 7,
-      'cookie_secure' => true,
+      'cookie_secure' => $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] == 'https' ? true : false,
       'cookie_httponly' => true,
       'use_strict_mode' => true
     ]);
@@ -52,6 +53,7 @@ class Dashboard {
     }
 
     $this->pushoverAppToken = getenv('PUSHOVER_APP_TOKEN');
+    $this->serverURL = sprintf('%s://%s', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? 'http', getenv('HTTPD_SERVERNAME'));
 
     switch (strtolower(getenv('TEMPERATURE_SCALE'))) {
       case 'f':
@@ -249,6 +251,13 @@ EOQ;
     return false;
   }
 
+  public function isValidNonce($type, $value) {
+    if ($this->memcachedConn->get(sprintf('%s_%s', $type, $value))) {
+      return true;
+    }
+    return false;
+  }
+
   public function resolveObject($type, $value) {
     $type = $this->dbConn->escapeString($type);
     $value = $this->dbConn->escapeString($value);
@@ -373,6 +382,14 @@ EOQ;
       if ($this->dbConn->exec($query)) {
         return true;
       }
+    }
+    return false;
+  }
+
+  public function createNonce($type, $period) {
+    $nonce = bin2hex(random_bytes(20));
+    if ($this->memcachedConn->set(sprintf('%s_%s', $type, $nonce), time(), $period)) {
+      return $nonce;
     }
     return false;
   }
@@ -541,6 +558,13 @@ EOQ;
         break;
     }
     if ($this->dbConn->exec($query)) {
+      return true;
+    }
+    return false;
+  }
+
+  public function expireNonce($type, $value) {
+    if ($this->memcachedConn->delete(sprintf('%s_%s', $type, $value))) {
       return true;
     }
     return false;
@@ -793,7 +817,7 @@ EOQ;
       while ($user = $users->fetchArray(SQLITE3_ASSOC)) {
         $user_name = !empty($user['last_name']) ? sprintf('%2$s, %1$s', $user['first_name'], $user['last_name']) : $user['first_name'];
         foreach ($messages as $message) {
-          curl_setopt($ch, CURLOPT_POSTFIELDS, ['user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message, 'priority' => $user['pushover_priority'], 'retry' => $user['pushover_retry'], 'expire' => $user['pushover_expire'], 'sound' => $user['pushover_sound']]);
+          curl_setopt($ch, CURLOPT_POSTFIELDS, ['user' => $user['pushover_user'], 'token' => $user['pushover_token'], 'message' => $message['body'], 'url' => $message['url'], 'priority' => $user['pushover_priority'], 'retry' => $user['pushover_retry'], 'expire' => $user['pushover_expire'], 'sound' => $user['pushover_sound']]);
           curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
           if (curl_exec($ch) !== false && curl_getinfo($ch, CURLINFO_RESPONSE_CODE) == 200) {
             $status = 'successful';
@@ -804,6 +828,13 @@ EOQ;
         }
       }
       curl_close($ch);
+      return true;
+    }
+    return false;
+  }
+
+  public function suppressNotifications($range, $elemment, $sensor_id) {
+    if ($this->memcachedConn->set(sprintf('notified%s%s-%u', ucfirst($range), ucfirst($element), $sensor_id), time(), 60 * 60 *3)) {
       return true;
     }
     return false;

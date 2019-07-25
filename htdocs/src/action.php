@@ -36,7 +36,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -56,7 +56,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'No name supplied';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -74,7 +74,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'No name supplied';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -100,7 +100,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -120,7 +120,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -138,7 +138,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -156,7 +156,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -178,7 +178,7 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
@@ -210,7 +210,23 @@ switch ($_REQUEST['func']) {
         $output['message'] = 'Missing arguments';
       }
     } else {
-      header('HTTP/1.1 403 Forbidden');
+      header('HTTP/1.1 401 Unauthorized');
+      $output['success'] = false;
+      $output['message'] = 'Unauthorized';
+    }
+    break;
+  case 'suppressNotifications':
+    if (array_key_exists('nonce', $_REQUEST) && $dashboard->isValidNonce('suppressNotifications', $_REQUEST['nonce'])) {
+      if (!empty($_REQUEST['range']) && !empty($_REQUEST['element']) && !empty($_REQUEST['sensor_id'])) {
+        $output['success'] = $dashboard->suppressNotifications($_REQUEST['range'], $_REQUEST['element'], $_REQUEST['sensor_id']);
+        $dashboard->expireNonce('suppressNotifications', $_REQUEST['nonce']);
+      } else {
+        header('HTTP/1.1 400 Bad Request');
+        $output['success'] = false;
+        $output['message'] = 'Missing arguments';
+      }
+    } else {
+      header('HTTP/1.1 401 Unauthorized');
       $output['success'] = false;
       $output['message'] = 'Unauthorized';
     }
