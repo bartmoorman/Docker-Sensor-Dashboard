@@ -834,7 +834,7 @@ EOQ;
   }
 
   public function suppressNotifications($range, $elemment, $sensor_id) {
-    if ($this->memcachedConn->set(sprintf('notified%s%s-%u', ucfirst($range), ucfirst($element), $sensor_id), time(), 60 * 60 *3)) {
+    if ($this->memcachedConn->set(sprintf('notified%s%s-%u', ucfirst($range), ucfirst($element), $sensor_id), time(), 60 * 60 * 6)) {
       return true;
     }
     return false;
