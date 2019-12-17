@@ -15,6 +15,9 @@ $dashboard = new Dashboard(true, false, false, true);
       <div class='modal-dialog modal-sm modal-dialog-centered'>
         <div class='modal-content'>
           <form>
+            <div class='modal-header py-2'>
+              <h3 class='modal-title w-100 text-center'>Sensor Dashboard</h3>
+            </div>
             <div class='modal-body'>
               <div class='form-row'>
                 <div class='form-group col'>
