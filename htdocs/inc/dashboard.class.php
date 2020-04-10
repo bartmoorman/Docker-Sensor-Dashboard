@@ -1,5 +1,6 @@
 <?php
 class Dashboard {
+  public $appName = 'Sensor Dashboard';
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
   private $memcachedHost;
