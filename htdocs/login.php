@@ -16,7 +16,7 @@ $dashboard = new Dashboard(true, false, false, true);
         <div class='modal-content'>
           <form>
             <div class='modal-header py-2'>
-              <h3 class='modal-title w-100 text-center'>Sensor Dashboard</h3>
+              <h3 class='modal-title w-100 text-center'><?php echo $dashboard->appName ?></h3>
             </div>
             <div class='modal-body'>
               <div class='form-row'>
