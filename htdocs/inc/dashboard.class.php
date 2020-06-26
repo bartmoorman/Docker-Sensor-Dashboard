@@ -1,9 +1,12 @@
 <?php
+date_default_timezone_set(getenv('TZ'));
+
 class Dashboard {
   public $appName = 'Sensor Dashboard';
   private $dbFile = '/config/dashboard.db';
   private $dbConn;
   private $memcachedHost;
+  private $memcachedPort;
   public $memcachedConn;
   private $queueKey = 2876;
   public $queueSize = 512;
@@ -33,7 +36,8 @@ class Dashboard {
       $this->initDb();
     }
 
-    $this->memcachedHost = getenv('MEMCACHED_HOST');
+    $this->memcachedHost = getenv('MEMCACHED_HOST') ?: 'memcached';
+    $this->memcachedPort = getenv('MEMCACHED_PORT') ?: 11211;
     $this->connectMemcached();
 
     $this->connectQueue();
@@ -167,7 +171,7 @@ EOQ;
 
   private function connectMemcached() {
     if ($this->memcachedConn = new Memcached()) {
-      $this->memcachedConn->addServer($this->memcachedHost, 11211);
+      $this->memcachedConn->addServer($this->memcachedHost, $this->memcachedPort);
       return true;
     }
     return false;
