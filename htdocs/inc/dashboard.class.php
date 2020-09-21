@@ -25,6 +25,7 @@ class Dashboard {
       'gc_maxlifetime' => 60 * 60 * 24 * 7,
       'cookie_lifetime' => 60 * 60 * 24 * 7,
       'cookie_secure' => $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] == 'https' ? true : false,
+      'cookie_samesite' => 'None',
       'cookie_httponly' => true,
       'use_strict_mode' => true
     ]);
