@@ -112,7 +112,7 @@ foreach ($periods as $hours => $period) {
               }
             })
             .always(function() {
-              timer = setTimeout(getReadings, 5 * 1000);
+              timer = setTimeout(getReadings, $('select.id-hours').val() * 1000);
             });
         };
 
