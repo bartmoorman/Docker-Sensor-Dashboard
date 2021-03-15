@@ -157,7 +157,7 @@ foreach ($dashboard->getObjects('sensors') as $sensor) {
 
         $('button.id-modify').click(function() {
           if (confirm(`Want to ${$(this).data('action').toUpperCase()} sensor ${$(this).data('sensor_id')}?`)) {
-            $.get('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "sensor_id", "value": $(this).data('sensor_id')})
+            $.post('src/action.php', {"func": "modifyObject", "action": $(this).data('action'), "type": "sensor_id", "value": $(this).data('sensor_id')})
               .done(function(data) {
                 if (data.success) {
                   location.reload();

@@ -749,15 +749,12 @@ EOQ;
       $output = ['temperatureData' => [], 'temperature' => ['suggestedMin' => $this->temperature['max'], 'suggestedMax' => $this->temperature['min']], 'humidityData' => [], 'humidity' => ['suggestedMin' => 100, 'suggestedMax' => 0]];
       while ($reading = $readings->fetchArray(SQLITE3_ASSOC)) {
         $reading['temperature'] = $this->convertTemperature($reading['temperature']);
+        $output['temperatureData'][] = ['x' => $reading['date'], 'y' => $reading['temperature']];
         $output['temperature']['suggestedMin'] = min($output['temperature']['suggestedMin'], $reading['temperature'] - $this->temperature['buffer']);
         $output['temperature']['suggestedMax'] = max($output['temperature']['suggestedMax'], $reading['temperature'] + $this->temperature['buffer']);
+        $output['humidityData'][] = ['x' => $reading['date'], 'y' => $reading['humidity']];
         $output['humidity']['suggestedMin'] = min($output['humidity']['suggestedMin'], $reading['humidity'] - 1);
         $output['humidity']['suggestedMax'] = max($output['humidity']['suggestedMax'], $reading['humidity'] + 1);
-      }
-      while ($reading = $readings->fetchArray(SQLITE3_ASSOC)) {
-        $reading['temperature'] = $this->convertTemperature($reading['temperature']);
-        $output['temperatureData'][] = ['x' => $reading['date'], 'y' => $reading['temperature']];
-        $output['humidityData'][] = ['x' => $reading['date'], 'y' => $reading['humidity']];
       }
       return $output;
     }

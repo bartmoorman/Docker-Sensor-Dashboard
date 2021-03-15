@@ -12,7 +12,9 @@ $dashboard = new Dashboard(true, true, false, false);
   </head>
   <body>
 <?php require_once('header.php'); ?>
-    <canvas id='chart'></canvas>
+    <div class='container-fluid'>
+      <canvas id='chart'></canvas>
+    </div>
     <nav class='navbar text-center'>
       <select class='btn btn-sm btn-outline-success ml-auto mr-2 id-sensor_id' data-storage='sensor_id'>
         <option value='0'>-- Sensor --</option>
